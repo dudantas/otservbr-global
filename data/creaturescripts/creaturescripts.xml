@@ -23,7 +23,6 @@
 	<!-- others -->
 	<event type="advance" name="AdvanceSave" script="others/advance_save.lua"/>
 	<event type="login" name="AdventurerBlessingLogin" script="others/adventure_blessing_login.lua"/>
-	<event type="kill" name="BestiaryOnKill" script="others/bestiary_kill.lua"/>
 	<event type="login" name="LoginBossPlayer" script="others/boss_reward_chest.lua"/>
 	<event type="death" name="BossDeath" script="others/boss_reward_chest.lua"/>
 	<event type="healthchange" name="BossParticipation" script="others/boss_reward_chest.lua"/>

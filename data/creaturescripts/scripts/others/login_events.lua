@@ -5,7 +5,6 @@ function onLogin(player)
 		"LowerRoshamuul",
 		--Others
 		"AdvanceSave",
-		"BestiaryOnKill",
 		"BossParticipation",
 		"DropLoot",
 		"PlayerDeath",
