@@ -46,6 +46,15 @@ Monster* Monster::createMonster(const std::string& name)
 	return new Monster(mType);
 }
 
+Monster* Monster::createMonsterByRace(uint16_t raceid)
+{
+	MonsterType* mType = g_monsters.getMonsterTypeByRace(raceid);
+	if (!mType) {
+		return nullptr;
+	}
+	return new Monster(mType);
+}
+
 Monster::Monster(MonsterType* mType) :
 	Creature(),
 	strDescription(asLowerCaseString(mType->nameDescription)),

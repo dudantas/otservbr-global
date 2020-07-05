@@ -162,6 +162,14 @@ class ProtocolGame final : public Protocol
 		void parseRemoveVip(NetworkMessage& msg);
 		void parseEditVip(NetworkMessage& msg);
 
+		void parseRequestBestiaryData();
+		void parseRequestBestiaryOverview(NetworkMessage& msg);
+		void parseRequestBestiaryMonsterData(NetworkMessage& msg);
+
+		// charm
+		void parseRequestCharmData();
+		void parseRequestUnlockCharm(NetworkMessage& msg);
+
 		void parseRotateItem(NetworkMessage& msg);
 		void parseWrapableItem(NetworkMessage& msg);
 
@@ -195,6 +203,16 @@ class ProtocolGame final : public Protocol
 		void sendFYIBox(const std::string& message);
 
 		void sendImbuementWindow(Item* item);
+
+		void sendBestiaryGroups();
+		void sendBestiaryOverview(std::string raceName);
+		void sendBestiaryOverview(std::vector<uint16_t> monsters);
+		void sendBestiaryMonsterData(uint16_t id);
+		void sendBestiaryTracker();
+
+		// charm
+		void sendCharmData();
+
 		void sendItemsPrice();
 
 		void sendDistanceShoot(const Position& from, const Position& to, uint8_t type);
@@ -350,6 +368,9 @@ class ProtocolGame final : public Protocol
 
 		//otclient
 		void parseExtendedOpcode(NetworkMessage& msg);
+
+		//bestiary
+		void parseBestiaryTracker(NetworkMessage& msg);
 
 		//reloadCreature
 		void reloadCreature(const Creature* creature);

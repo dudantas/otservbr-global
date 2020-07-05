@@ -188,6 +188,9 @@ function Player:onLook(thing, position, distance)
 			end
 			
 		elseif thing:isCreature() then
+			if thing:isMonster() and self:getGroup():getId() == 6 then
+				description = string.format("%s Race ID: %d", description, thing:getRaceId())
+			end
 			local str = "%s\nHealth: %d / %d"
 			if thing:isPlayer() and thing:getMaxMana() > 0 then
 				str = string.format("%s, Mana: %d / %d", str, thing:getMana(), thing:getMaxMana())
@@ -220,6 +223,9 @@ function Player:onLookInBattleList(creature, distance)
 		end
 	end
 	if self:getGroup():getAccess() then
+		if creature:isMonster() and self:getGroup():getId() == 6 then
+			description = string.format("%s Race ID: %d", description, creature:getRaceId())
+		end
 		local str = "%s\nHealth: %d / %d"
 		if creature:isPlayer() and creature:getMaxMana() > 0 then
 			str = string.format("%s, Mana: %d / %d", str, creature:getMana(), creature:getMaxMana())

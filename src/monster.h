@@ -42,6 +42,7 @@ class Monster final : public Creature
 {
 	public:
 		static Monster* createMonster(const std::string& name);
+		static Monster* createMonsterByRace(uint16_t raceid);
 		static int32_t despawnRange;
 		static int32_t despawnRadius;
 
@@ -100,6 +101,9 @@ class Monster final : public Creature
 		}
 		bool isPushable() const override {
 			return mType->info.pushable && baseSpeed != 0;
+		}
+		uint16_t getRaceId() const {
+			return mType->info.raceid;
 		}
 		bool isAttackable() const override {
 			return mType->info.isAttackable;

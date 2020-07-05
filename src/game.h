@@ -322,6 +322,11 @@ class Game
 		void sendGuildMotd(uint32_t playerId);
 		void kickPlayer(uint32_t playerId, bool displayEffect);
 		void playerReportBug(uint32_t playerId, const std::string& message, const Position& position, uint8_t category);
+
+		void playerCharmData(uint32_t playerId);
+		void playerBestiaryGroups(uint32_t playerId);
+		void playerBestiaryMonsterData(uint32_t playerId, uint16_t monsterId);
+
 		void playerDebugAssert(uint32_t playerId, const std::string& assertLine, const std::string& date, const std::string& description, const std::string& comment);
 		void playerAnswerModalWindow(uint32_t playerId, uint32_t modalWindowId, uint8_t button, uint8_t choice);
 		void playerReportRuleViolationReport(uint32_t playerId, const std::string& targetName, uint8_t reportType, uint8_t reportReason, const std::string& comment, const std::string& translation);
@@ -416,7 +421,11 @@ class Game
 		void playerCoinTransfer(uint32_t playerId, const std::string& receiverName, uint32_t amount);
 		void playerStoreTransactionHistory(uint32_t playerId, uint32_t page);
 
+		void parsePlayerBestiaryTracker(uint32_t playerId, uint16_t raceId);
+
 		void parsePlayerExtendedOpcode(uint32_t playerId, uint8_t opcode, const std::string& buffer);
+
+		void playerUnlockCharm(uint32_t playerId, uint8_t charmid, uint8_t action, uint16_t raceid);
 
 		std::forward_list<Item*> getMarketItemList(uint16_t wareId, uint16_t sufficientCount, DepotLocker* depotLocker);
 

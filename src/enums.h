@@ -637,6 +637,7 @@ enum CombatOrigin
 	ORIGIN_SPELL,
 	ORIGIN_MELEE,
 	ORIGIN_RANGED,
+	ORIGIN_CHARM
 };
 
 struct CombatDamage
@@ -671,6 +672,12 @@ enum MonstersEvent_t : uint8_t {
 	MONSTERS_EVENT_DISAPPEAR = 3,
 	MONSTERS_EVENT_MOVE = 4,
 	MONSTERS_EVENT_SAY = 5,
+};
+
+struct BestiaryPoints
+{
+	int32_t kills = 0;
+	bool gained = false;
 };
 
 enum Resource_t : uint8_t

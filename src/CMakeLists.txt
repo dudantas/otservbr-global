@@ -5,6 +5,8 @@ set(otbr_SRC
 	${CMAKE_CURRENT_LIST_DIR}/ban.cpp
 	${CMAKE_CURRENT_LIST_DIR}/baseevents.cpp
 	${CMAKE_CURRENT_LIST_DIR}/bed.cpp
+	${CMAKE_CURRENT_LIST_DIR}/bestiary.cpp
+	${CMAKE_CURRENT_LIST_DIR}/charm.cpp
 	${CMAKE_CURRENT_LIST_DIR}/chat.cpp
 	${CMAKE_CURRENT_LIST_DIR}/combat.cpp
 	${CMAKE_CURRENT_LIST_DIR}/condition.cpp

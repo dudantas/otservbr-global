@@ -23,6 +23,8 @@
 
 #include "actions.h"
 #include "bed.h"
+#include "bestiary.h"
+#include "charm.h"
 #include "configmanager.h"
 #include "creature.h"
 #include "creatureevent.h"
@@ -47,7 +49,9 @@
 
 extern ConfigManager g_config;
 extern Actions* g_actions;
+extern Bestiaries g_bestiaries;
 extern Chat* g_chat;
+extern Charms g_charms;
 extern TalkActions* g_talkActions;
 extern Spells* g_spells;
 extern Vocations g_vocations;
@@ -4114,7 +4118,7 @@ bool Game::combatChangeHealth(Creature* attacker, Creature* target, CombatDamage
 			return false;
 		}
 
-		if (damage.origin != ORIGIN_NONE) {
+		if (damage.origin != ORIGIN_NONE && damage.origin != ORIGIN_CHARM) {
 			const auto& events = target->getCreatureEvents(CREATURE_EVENT_HEALTHCHANGE);
 			if (!events.empty()) {
 				for (CreatureEvent* creatureEvent : events) {
@@ -4317,7 +4321,7 @@ bool Game::combatChangeHealth(Creature* attacker, Creature* target, CombatDamage
 			return true;
 		}
 
-		if (damage.origin != ORIGIN_NONE) {
+		if (damage.origin != ORIGIN_NONE && damage.origin != ORIGIN_CHARM) {
 			const auto& events = target->getCreatureEvents(CREATURE_EVENT_HEALTHCHANGE);
 			if (!events.empty()) {
 				for (CreatureEvent* creatureEvent : events) {
@@ -4427,6 +4431,28 @@ bool Game::combatChangeHealth(Creature* attacker, Creature* target, CombatDamage
 				if (tmpPlayer == attackerPlayer && attackerPlayer != targetPlayer) {
 					ss.str({});
 					ss << ucfirst(target->getNameDescription()) << " loses " << damageString << " due to your attack.";
+
+					bool hasParent = false;
+					Monster* targetMonster = target->getMonster();
+					if (damage.origin == ORIGIN_CHARM && targetMonster) {
+						int8_t charmid = tmpPlayer->getMonsterCharm(targetMonster->getRaceId());
+						if (charmid > -1) {
+							Charm* charm = g_charms.getCharm(charmid);
+							if (charm) {
+								if (!hasParent) {
+									hasParent = true;
+									ss << " (";
+								} else {
+									ss << " and ";
+								}
+
+								ss << "active charm '" << charm->getName() << '\'';
+							}
+						}
+					}
+					if (hasParent) {
+						ss << ")";
+					}
 					message.type = MESSAGE_DAMAGE_DEALT;
 					message.text = ss.str();
 				} else if (tmpPlayer == targetPlayer) {
@@ -4438,6 +4464,28 @@ bool Game::combatChangeHealth(Creature* attacker, Creature* target, CombatDamage
 						ss << " due to your own attack.";
 					} else {
 						ss << " due to an attack by " << attacker->getNameDescription() << '.';
+
+						bool hasParent = false;
+						Monster* attackerMonster = attacker ? attacker->getMonster() : nullptr;
+						if (damage.origin == ORIGIN_CHARM && attackerMonster) {
+							int8_t charmid = tmpPlayer->getMonsterCharm(attackerMonster->getRaceId());
+							if (charmid > -1) {
+								Charm* charm = g_charms.getCharm(charmid);
+								if (charm) {
+									if (!hasParent) {
+										hasParent = true;
+										ss << " (";
+									} else {
+										ss << " and ";
+									}
+
+									ss << "active charm '" << charm->getName() << '\'';
+								}
+							}
+						}
+						if (hasParent) {
+							ss << ")";
+						}
 					}
 					message.type = MESSAGE_DAMAGE_RECEIVED;
 					message.text = ss.str();
@@ -5386,6 +5434,44 @@ void Game::playerReportBug(uint32_t playerId, const std::string& message, const 
 	}
 
 	g_events->eventPlayerOnReportBug(player, message, position, category);
+}
+
+// Charm
+void Game::playerCharmData(uint32_t playerId)
+{
+	Player* player = getPlayerByID(playerId);
+	if (!player) {
+		return;
+	}
+
+	player->sendCharmData();
+}
+
+// Bestiary
+void Game::playerBestiaryGroups(uint32_t playerId)
+{
+	Player* player = getPlayerByID(playerId);
+	if (!player) {
+		return;
+	}
+
+	player->sendBestiaryGroups();
+}
+
+void Game::playerBestiaryMonsterData(uint32_t playerId, uint16_t monsterId)
+{
+	Player* player = getPlayerByID(playerId);
+	if (!player) {
+		return;
+	}
+
+	MonsterType* monsterType = g_monsters.getMonsterTypeByRace(monsterId);
+	if (!monsterType) {
+		std::cout << "[Game::playerBestiaryMonsterData] Monster by id " << monsterId << " not found" << std::endl;
+		return;
+	}
+
+	player->sendBestiaryMonsterData(monsterId);
 }
 
 void Game::playerDebugAssert(uint32_t playerId, const std::string& assertLine, const std::string& date, const std::string& description, const std::string& comment)
@@ -6353,6 +6439,17 @@ void Game::playerStoreTransactionHistory(uint32_t playerId, uint32_t page)
 	}
 }
 
+void Game::parsePlayerBestiaryTracker(uint32_t playerId, uint16_t raceId)
+{
+	Player* player = getPlayerByID(playerId);
+	if (!player) {
+		return;
+	}
+
+	player->manageMonsterTracker(raceId);
+
+}
+
 void Game::parsePlayerExtendedOpcode(uint32_t playerId, uint8_t opcode, const std::string& buffer)
 {
 	Player* player = getPlayerByID(playerId);
@@ -6363,6 +6460,55 @@ void Game::parsePlayerExtendedOpcode(uint32_t playerId, uint8_t opcode, const st
 	for (CreatureEvent* creatureEvent : player->getCreatureEvents(CREATURE_EVENT_EXTENDED_OPCODE)) {
 		creatureEvent->executeExtendedOpcode(player, opcode, buffer);
 	}
+}
+
+void Game::playerUnlockCharm(uint32_t playerId, uint8_t charmid, uint8_t action, uint16_t raceid)
+{
+	Player* player = getPlayerByID(playerId);
+	if (!player) {
+		return;
+	}
+
+	if (player->isUnlockedCharm(charmid) && action == 0) {
+		return;
+	}
+
+	Charm* charm = g_charms.getCharm(charmid);
+	if(!charm) {
+		return;
+	}
+
+	if (action == 0) {
+		uint16_t price = charm->getPrice();
+		uint16_t playercharm = player->getCharmPoints();
+
+		if (playercharm < price) {
+			return;
+		}
+
+		player->setCharmPoints(playercharm - price);
+		player->addCharm(charmid);
+	} else if (action == 1) {
+		if (player->getMonsterCharm(raceid) != -1) {
+			return;
+		}
+
+		player->addCharm(charmid, raceid);
+	} else if (action == 2) {
+		if (player->getMoney() + player->getBankBalance() < (player->getCharmPrice())) {
+			return;
+		}
+
+		removeMoney(player, (player->getCharmPrice()), 0, true);
+		player->removeCharm(charmid);
+	}
+
+	if (player->getLastBestiaryMonster() > 0) {
+		player->sendBestiaryMonsterData(player->getLastBestiaryMonster());
+		player->setLastBestiaryMonster(0);
+	}
+
+	player->sendCharmData();
 }
 
 std::forward_list<Item*> Game::getMarketItemList(uint16_t wareId, uint16_t sufficientCount, DepotLocker* depotLocker)
@@ -6612,6 +6758,7 @@ bool Game::reload(ReloadTypes_t reloadType)
 {
 	switch (reloadType) {
 		case RELOAD_TYPE_ACTIONS: return g_actions->reload();
+		case RELOAD_TYPE_BESTIARY: return g_bestiaries.reload();
 		case RELOAD_TYPE_CHAT: return g_chat->load();
 		case RELOAD_TYPE_CONFIG: return g_config.reload();
 		case RELOAD_TYPE_CREATURESCRIPTS: {

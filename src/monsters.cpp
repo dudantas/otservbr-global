@@ -19,6 +19,7 @@
 
 #include "otpch.h"
 
+#include "bestiary.h"
 #include "monsters.h"
 #include "monster.h"
 #include "spells.h"
@@ -29,6 +30,7 @@
 
 #include "pugicast.h"
 
+extern Bestiaries g_bestiaries;
 extern Game g_game;
 extern Spells* g_spells;
 extern Monsters g_monsters;
@@ -67,18 +69,25 @@ bool Monsters::loadFromXml(bool reloading /*= false*/)
 	}
 
 	loaded = true;
-
+	std::map<std::string, uint16_t> bestiaryMonsters = g_bestiaries.getMonsterNameMap();
 	for (auto monsterNode : doc.child("monsters").children()) {
 		std::string name = asLowerCaseString(monsterNode.attribute("name").as_string());
+		uint16_t race = 0;
+		auto it = bestiaryMonsters.find(name);
+		if (it != bestiaryMonsters.end()) {
+			race = it->second;
+		}
+		if (race != 0) {
+			raceidMonsters[race] = name;
+		}
 		std::string file = "data/monster/" + std::string(monsterNode.attribute("file").as_string());
 		auto forceLoad = g_config.getBoolean(ConfigManager::FORCE_MONSTERTYPE_LOAD);
 		if (forceLoad) {
-			loadMonster(file, name, true);
+			loadMonster(file, name, true, race);
 			continue;
 		}
-
 		if (reloading && monsters.find(name) != monsters.end()) {
-			loadMonster(file, name, true);
+			loadMonster(file, name, true, race);
 		} else {
 			unloadedMonsters.emplace(name, file);
 		}
@@ -752,13 +761,14 @@ bool Monsters::deserializeSpell(MonsterSpell* spell, spellBlock_t& sb, const std
 	return true;
 }
 
-MonsterType* Monsters::loadMonster(const std::string& file, const std::string& monsterName, bool reloading /*= false*/)
+MonsterType* Monsters::loadMonster(const std::string& file, const std::string& monsterName, bool reloading /*= false*/, uint16_t raceid)
 {
 	MonsterType* mType = nullptr;
 
 	pugi::xml_document doc;
 	pugi::xml_parse_result result = doc.load_file(file.c_str());
 	if (!result) {
+		std::cout << "[Monster - " << monsterName << "] ";
 		printXMLError("Error - Monsters::loadMonster", file, result);
 		return nullptr;
 	}
@@ -823,6 +833,12 @@ MonsterType* Monsters::loadMonster(const std::string& file, const std::string& m
 
 	if ((attr = monsterNode.attribute("manacost"))) {
 		mType->info.manaCost = pugi::cast<uint32_t>(attr.value());
+	}
+
+	if ((attr = monsterNode.attribute("raceid"))) {
+		mType->info.raceid = pugi::cast<uint16_t>(attr.value());
+	} else if (raceid > 0) {
+		mType->info.raceid = raceid;
 	}
 
 	if ((attr = monsterNode.attribute("skull"))) {
@@ -943,7 +959,7 @@ MonsterType* Monsters::loadMonster(const std::string& file, const std::string& m
 			std::cout << "[Warning - Monsters::loadMonster] Missing targetchange chance. " << file << std::endl;
 		}
 	}
-	
+
 	if ((node = monsterNode.child("targetstrategies"))) {
 		if ((attr = node.attribute("nearest"))) {
 			mType->info.targetStrategiesNearestPercent = pugi::cast<int32_t>(attr.value());
@@ -1345,7 +1361,7 @@ bool Monsters::loadLootItem(const pugi::xml_node& node, LootBlock& lootBlock)
 	} else {
 		lootBlock.countmax = 1;
 	}
-	
+
 	if ((attr = node.attribute("countmin"))) {
 		lootBlock.countmin = std::max<int32_t>(1, pugi::cast<int32_t>(attr.value()));
 	} else {
@@ -1450,4 +1466,14 @@ void Monsters::addMonsterType(const std::string& name, MonsterType* mType)
 	// https://stackoverflow.com/questions/1486904/how-do-i-best-silence-a-warning-about-unused-variables
 	(void) mType;
 	mType = &monsters[asLowerCaseString(name)];
+}
+
+MonsterType* Monsters::getMonsterTypeByRace(uint16_t raceid)
+{
+	auto it = raceidMonsters.find(raceid);
+	if (it != raceidMonsters.end()) {
+		return getMonsterType(it->second);
+	}
+
+	return nullptr;
 }

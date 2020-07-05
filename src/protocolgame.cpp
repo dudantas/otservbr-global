@@ -27,6 +27,8 @@
 
 #include "player.h"
 
+#include "bestiary.h"
+#include "charm.h"
 #include "configmanager.h"
 #include "actions.h"
 #include "game.h"
@@ -40,6 +42,8 @@
 #include "imbuements.h"
 
 extern Game g_game;
+extern Bestiaries g_bestiaries;
+extern Charms g_charms;
 extern ConfigManager g_config;
 extern Actions actions;
 extern CreatureEvents* g_creatureEvents;
@@ -491,6 +495,11 @@ void ProtocolGame::parsePacket(NetworkMessage& msg)
 		case 0xDC: parseAddVip(msg); break;
 		case 0xDD: parseRemoveVip(msg); break;
 		case 0xDE: parseEditVip(msg); break;
+		case 0x2A: parseBestiaryTracker(msg); break;
+		case 0xE1: parseRequestBestiaryData(); break;
+		case 0xE2: parseRequestBestiaryOverview(msg); break;
+		case 0xE3: parseRequestBestiaryMonsterData(msg); break;
+		case 0xE4: parseRequestUnlockCharm(msg); break;
 		case 0xE6: parseBugReport(msg); break;
 		case 0xE7: /* thank you */ break;
 		case 0xE8: parseDebugAssert(msg); break;
@@ -513,6 +522,7 @@ void ProtocolGame::parsePacket(NetworkMessage& msg)
 
 		//case 0x77 Equip Hotkey.
 		//case 0xDF, 0xE0, 0xE1, 0xFB, 0xFC, 0xFD, 0xFE Premium Shop.
+		//case 0xE2 Request bestiary monster.
 
 		default:
 			// std::cout << "Player: " << player->getName() << " sent an unknown packet header: 0x" << std::hex << static_cast<uint16_t>(recvbyte) << std::dec << "!" << std::endl;
@@ -1076,6 +1086,53 @@ void ProtocolGame::parseRuleViolationReport(NetworkMessage &msg)
 	}
 
 	addGameTask(&Game::playerReportRuleViolationReport, player->getID(), targetName, reportType, reportReason, comment, translation);
+}
+
+void ProtocolGame::parseRequestBestiaryData()
+{
+	addGameTask(&Game::playerBestiaryGroups, player->getID());
+}
+
+void ProtocolGame::parseRequestBestiaryOverview(NetworkMessage& msg)
+{
+	uint8_t type = msg.getByte();
+	if (type == 0x00) {
+		std::string raceName = msg.getString();
+		player->sendBestiaryOverview(raceName);
+	} else if (type == 0x01) {
+		std::vector<uint16_t> monsters;
+		uint16_t size = msg.get<uint16_t>();
+		for(uint16_t i = 0; i < size; i++) {
+			monsters.emplace_back(msg.get<uint16_t>());
+		}
+		player->sendBestiaryOverview(monsters);
+	}
+}
+
+void ProtocolGame::parseRequestBestiaryMonsterData(NetworkMessage& msg)
+{
+	player->sendCharmData();
+	uint16_t monsterId = msg.get<uint16_t>();
+	addGameTask(&Game::playerBestiaryMonsterData, player->getID(), monsterId);
+}
+
+void ProtocolGame::parseRequestUnlockCharm(NetworkMessage& msg)
+{
+	uint8_t charmid = msg.getByte();
+	uint8_t action = msg.getByte();
+	uint16_t raceid = 0;
+	if (action == 0x00) {
+	} else if (action == 0x01) {
+		raceid = msg.get<uint16_t>();
+	} else if (action == 0x02) {
+	}
+
+	addGameTask(&Game::playerUnlockCharm, player->getID(), charmid, action, raceid);
+}
+
+void ProtocolGame::parseRequestCharmData()
+{
+	addGameTask(&Game::playerCharmData, player->getID());
 }
 
 void ProtocolGame::parseBugReport(NetworkMessage& msg)
@@ -3877,6 +3934,14 @@ void ProtocolGame::AddShopItem(NetworkMessage& msg, const ShopInfo& item)
 	msg.add<uint32_t>(item.sellPrice == 4294967295 ? 0 : item.sellPrice);
 }
 
+void ProtocolGame::parseBestiaryTracker(NetworkMessage& msg)
+{
+	uint16_t raceid = msg.get<uint16_t>();
+	msg.get<uint8_t>();
+
+	addGameTask(&Game::parsePlayerBestiaryTracker, player->getID(), raceid);
+}
+
 void ProtocolGame::parseExtendedOpcode(NetworkMessage& msg)
 {
 	uint8_t opcode = msg.getByte();
@@ -3884,6 +3949,388 @@ void ProtocolGame::parseExtendedOpcode(NetworkMessage& msg)
 
 	// process additional opcodes via lua script event
 	addGameTask(&Game::parsePlayerExtendedOpcode, player->getID(), opcode, buffer);
+}
+
+void ProtocolGame::sendBestiaryGroups()
+{
+	NetworkMessage msg;
+	msg.addByte(0xD5);
+	msg.add<uint16_t>(g_bestiaries.bestiary.size());
+	for (auto best : g_bestiaries.bestiary) {
+		msg.addString(best.second.getName());
+		msg.add<uint16_t>(best.second.getRaces().size()); // amount
+		msg.add<uint16_t>(best.second.getRaces().size()); // know
+	}
+	writeToOutputBuffer(msg);
+}
+
+void ProtocolGame::sendBestiaryOverview(std::string raceName)
+{
+	Bestiary* race = g_bestiaries.getBestiaryByName(raceName);
+	if (!race) {
+		std::cout << "nao achei " << raceName << std::endl;
+		return;
+	}
+
+	NetworkMessage msg;
+	msg.addByte(0xD6);
+	msg.addString(race->getName()); // race name
+	msg.add<uint16_t>(race->getRaces().size()); // monster count
+	for (auto raceEnt : race->getRaces()) {
+		msg.add<uint16_t>(raceEnt.id); // monster name
+		uint8_t currentLevel = 0x00;
+
+		RaceEntry* raceEntry = race->getRaceByID(raceEnt.id);
+		if (raceEntry) {
+			Difficulty* difficulty = g_bestiaries.getDifficulty(raceEntry->difficulty, raceEntry->rare);
+			if (difficulty) {
+				int32_t killCounter = player->getBestiaryKills(raceEnt.id);
+				if (player->isAccessPlayer() || killCounter >= difficulty->final) {
+					currentLevel = 0x04;
+				} else if (killCounter < difficulty->first) {
+					currentLevel = 0x01;
+				} else if (killCounter < difficulty->second) {
+					currentLevel = 0x02;
+				} else if (killCounter < difficulty->final) {
+					currentLevel = 0x03;
+				}
+			}
+		}
+		msg.add<uint16_t>(currentLevel);
+	}
+	writeToOutputBuffer(msg);
+}
+
+void ProtocolGame::sendBestiaryOverview(std::vector<uint16_t> monsters)
+{
+	if(monsters.empty()) {
+		return;
+	}
+
+	std::vector<uint16_t> showMonsters;
+	for (auto it = monsters.begin(), end = monsters.end(); it != end; ++it) {
+		Bestiary* race = g_bestiaries.getBestiaryByRaceID(*it);
+		if(!race) {
+			continue;
+		}
+
+		RaceEntry* raceEntry = race->getRaceByID(*it);
+		if (!raceEntry) {
+			continue;
+		}
+		Difficulty* difficulty = g_bestiaries.getDifficulty(raceEntry->difficulty, raceEntry->rare);
+		if (!difficulty) {
+			continue;
+		}
+
+		showMonsters.emplace_back(*it);
+	}
+
+	NetworkMessage msg;
+	msg.addByte(0xD6);
+	msg.addString("Result");
+	msg.add<uint16_t>(showMonsters.size()); // monster count
+	for (auto it = showMonsters.begin(), end = showMonsters.end(); it != end; ++it) {
+		msg.add<uint16_t>(*it); // monster name
+		uint8_t currentLevel = 0x00;
+
+		Bestiary* race = g_bestiaries.getBestiaryByRaceID(*it);
+		if (!race) {
+			continue;
+		}
+		RaceEntry* raceEntry = race->getRaceByID(*it);
+		if (raceEntry) {
+			Difficulty* difficulty = g_bestiaries.getDifficulty(raceEntry->difficulty, raceEntry->rare);
+			if (difficulty) {
+				int32_t killCounter = player->getBestiaryKills(*it);
+				if (player->isAccessPlayer() || killCounter >= difficulty->final) {
+					currentLevel = 0x04;
+				} else if (killCounter < difficulty->first) {
+					currentLevel = 0x01;
+				} else if (killCounter < difficulty->second) {
+					currentLevel = 0x02;
+				} else if (killCounter < difficulty->final) {
+					currentLevel = 0x03;
+				}
+			}
+		}
+		msg.add<uint16_t>(currentLevel);
+	}
+	writeToOutputBuffer(msg);
+}
+
+void ProtocolGame::sendBestiaryMonsterData(uint16_t monsterId)
+{
+	Bestiary* race = g_bestiaries.getBestiaryByRaceID(monsterId);
+	if (!race) {
+		std::cout << "break race: " << monsterId << std::endl;
+		return;
+	}
+
+	MonsterType* monsterType = race->getMonsterByRace(monsterId);
+	if (!monsterType) {
+		std::cout << "break monsterType: " << monsterId << std::endl;
+		return;
+	}
+
+	RaceEntry* raceEntry = race->getRaceByID(monsterId);
+	if (!raceEntry) {
+		std::cout << "break raceEntry" << std::endl;
+		return;
+	}
+
+	Difficulty* difficulty = g_bestiaries.getDifficulty(raceEntry->difficulty, raceEntry->rare);
+	if (!difficulty) {
+		std::cout << "break difficulty " << raceEntry->difficulty << " " << raceEntry->rare << std::endl;
+		return;
+	}
+
+	NetworkMessage msg;
+	msg.addByte(0xD7);
+	msg.add<uint16_t>(monsterId);
+	msg.addString(race->getName());
+
+	int32_t killCounter = player->getBestiaryKills(monsterId);
+
+	uint8_t currentLevel = 0x00;
+	if (player->isAccessPlayer() || killCounter >= difficulty->final) {
+		currentLevel = 0x04;
+		if (player->isAccessPlayer())
+			killCounter = difficulty->final;
+
+	} else if (killCounter < difficulty->first) {
+		currentLevel = 0x01;
+	} else if (killCounter < difficulty->second) {
+		currentLevel = 0x02;
+	} else if (killCounter < difficulty->final) {
+		currentLevel = 0x03;
+	}
+
+	msg.addByte(currentLevel);
+
+	msg.add<uint32_t>(killCounter);
+	msg.add<uint16_t>(difficulty->first);
+	msg.add<uint16_t>(difficulty->second);
+	msg.add<uint16_t>(difficulty->final);
+
+	msg.addByte(raceEntry->difficulty);
+	msg.addByte(raceEntry->ocorrence - 1);
+
+	// getting monster loot -- duplicate items
+	std::map<uint16_t, int32_t> lootMap;
+	for (const auto& lootBlock : monsterType->info.lootItems) {
+		auto it = lootMap.find(lootBlock.id);
+		if (it == lootMap.end()) {
+			lootMap[lootBlock.id] = lootBlock.chance;
+		}
+	}	
+
+	msg.addByte(lootMap.size());
+
+	for (const auto& lootItem : lootMap) {
+		// common
+		uint8_t difficult = 0x00;
+		int32_t chance = lootItem.second;
+
+		if (chance < 200) {
+			// very-rare
+			difficult = 0x04;
+		} else if (chance < 1000) {
+			// semi-rare
+			difficult = 0x03;
+		} else if (chance < 5000) {
+			// rare
+			difficult = 0x02;
+		} else if (chance < 30000) {
+			// uncommon
+			difficult = 0x01;
+		}
+
+		if (killCounter < 1) {
+			msg.add<uint16_t>(0x00);
+			msg.addByte(0x0);
+			msg.addByte(difficult);
+		} else {
+			const ItemType& itemType = Item::items[lootItem.first];
+			msg.addItemId(lootItem.first);
+			msg.addByte(difficult);
+			msg.addByte(0x0); // 0 = normal loot   /  1 = special event loot
+			msg.addString(itemType.name);
+			msg.addByte((itemType.stackable ? 0x1 : 0x0));
+		}
+	}
+
+	if (currentLevel > 1) {
+		msg.add<uint16_t>(difficulty->charm);
+		uint8_t attackMode = 0x00;
+		if (monsterType->info.isPassive) {
+			attackMode = 0x02;
+		} else if (monsterType->info.targetDistance) {
+			attackMode = 0x01;
+		}
+
+		msg.addByte(attackMode);
+		msg.addByte(0x02); // flag for cast spells
+		msg.add<uint32_t>(monsterType->info.healthMax);
+		msg.add<uint32_t>(monsterType->info.experience);
+		msg.add<uint16_t>(static_cast<uint16_t>(monsterType->info.baseSpeed));
+		msg.add<uint16_t>(monsterType->info.armor);
+	}
+
+	if (currentLevel > 2) {
+		std::map<CombatType_t, uint8_t> defaultcombatmap;
+		defaultcombatmap[COMBAT_PHYSICALDAMAGE] = 100;
+		defaultcombatmap[COMBAT_FIREDAMAGE] = 100;
+		defaultcombatmap[COMBAT_EARTHDAMAGE] = 100;
+		defaultcombatmap[COMBAT_ENERGYDAMAGE] = 100;
+		defaultcombatmap[COMBAT_ICEDAMAGE] = 100;
+		defaultcombatmap[COMBAT_HOLYDAMAGE] = 100;
+		defaultcombatmap[COMBAT_DEATHDAMAGE] = 100;
+		defaultcombatmap[COMBAT_HEALING] = 100;
+
+		for (const auto& elementEntry : monsterType->info.elementMap) {
+			auto it = defaultcombatmap.find(elementEntry.first);
+			if (it == defaultcombatmap.end()) {
+				continue;
+			}
+			
+			defaultcombatmap[elementEntry.first] = elementEntry.second + 100;
+		}
+	
+		msg.addByte(defaultcombatmap.size());
+		uint8_t i = 0;
+		for (const auto& elementEntry : defaultcombatmap) {
+			msg.addByte(i);
+			msg.add<uint16_t>(elementEntry.second);
+			i++;
+		}
+
+		bool emptyLocation = raceEntry->location.empty();
+		msg.add<uint16_t>(emptyLocation ? 0x00 : 0x01); // enable or disable description
+		if(!emptyLocation)
+			msg.addString(raceEntry->location); // enable or disable description
+	}
+
+	if (currentLevel > 3) {
+		player->setLastBestiaryMonster(monsterId);
+		// charm things
+		int8_t charmid = player->getMonsterCharm(monsterId);
+		if (charmid > -1) {
+			msg.addByte(0x01);
+			msg.addByte(charmid);
+			msg.add<uint32_t>(player->getCharmPrice());
+		} else {
+			msg.addByte(0x00);
+			msg.addByte(0x01);
+		}
+	}
+
+	writeToOutputBuffer(msg);
+}
+
+void ProtocolGame::sendCharmData()
+{
+
+	NetworkMessage msg;
+	msg.addByte(0xD8);
+	msg.add<uint32_t>(player->getCharmPoints());
+	msg.addByte(g_charms.charms.size());
+	bool hasUnlock = true;
+	for (auto charm : g_charms.charms) {
+		msg.addByte(charm.second.getId());
+		msg.addString(charm.second.getName());
+		msg.addString(charm.second.getDescription());
+		msg.addByte(charm.second.getType());
+		msg.add<uint16_t>(charm.second.getPrice());
+		// msg.addByte(0x01);
+		msg.addByte(player->isUnlockedCharm(charm.second.getId()) ? 0x01 : 0x00 );
+		if (player->isUnlockedCharm(charm.second.getId()) && !hasUnlock) {
+			hasUnlock = true;
+		}
+		msg.addByte(player->getCurrentCreature(charm.second.getId()) == 0 ? 0x00 : 0x01);
+		if (player->getCurrentCreature(charm.second.getId()) > 0) {
+			msg.add<uint16_t>(player->getCurrentCreature(charm.second.getId()));
+			msg.add<uint32_t>(player->getCharmPrice());
+		}
+	}
+
+	msg.addByte(0x04); // ??
+	std::vector<uint16_t> showMonsters;
+	for (const auto& it : player->bestiaryKills) {
+		Bestiary* race = g_bestiaries.getBestiaryByRaceID(it.first);
+		if (race) {
+			RaceEntry* raceEntry = race->getRaceByID(it.first);
+			if (raceEntry) {
+				Difficulty* difficulty = g_bestiaries.getDifficulty(raceEntry->difficulty, raceEntry->rare);
+				const BestiaryPoints& bestiaryPoints = it.second;
+
+				if (difficulty && bestiaryPoints.kills >= difficulty->final && std::find(showMonsters.begin(), showMonsters.end(), bestiaryPoints.kills) == showMonsters.end()) {
+					uint16_t monsterid = static_cast<uint16_t>(it.first);
+					int charm = player->getMonsterCharm(monsterid);
+					if (charm == -1) {
+						showMonsters.emplace_back(it.first);
+					}
+				}
+			}
+		}
+
+	}
+
+	msg.add<uint16_t>(showMonsters.size());
+	if (!showMonsters.empty()) {
+		for (auto it = showMonsters.begin(), end = showMonsters.end(); it != end; ++it) {
+			msg.add<uint16_t>(*it);
+		}
+	}
+	writeToOutputBuffer(msg);
+}
+
+void ProtocolGame::sendBestiaryTracker()
+{
+	if (version < 1230) {
+		return;
+	}
+
+	NetworkMessage msg;
+	msg.addByte(0xB9);
+	msg.addByte(player->bestiaryTracker.size());
+	if (!player->bestiaryTracker.empty()) {
+		for (const auto& raceid : player->bestiaryTracker) {
+			Bestiary* race = g_bestiaries.getBestiaryByRaceID(raceid);
+			if (!race) {
+				std::cout << "break race: " << raceid << std::endl;
+				return;
+			}
+
+			MonsterType* monsterType = race->getMonsterByRace(raceid);
+			if (!monsterType) {
+				std::cout << "break monsterType: " << raceid << std::endl;
+				return;
+			}
+
+			RaceEntry* raceEntry = race->getRaceByID(raceid);
+			if (!raceEntry) {
+				std::cout << "break raceEntry" << std::endl;
+				return;
+			}
+
+			Difficulty* difficulty = g_bestiaries.getDifficulty(raceEntry->difficulty, raceEntry->rare);
+			if (!difficulty) {
+				std::cout << "break difficulty " << raceEntry->difficulty << " " << raceEntry->rare << std::endl;
+				return;
+			}
+
+
+			msg.add<uint16_t>(raceid);
+			msg.add<uint32_t>(player->getBestiaryKills(raceid));
+			msg.add<uint16_t>(difficulty->first);
+			msg.add<uint16_t>(difficulty->second);
+			msg.add<uint16_t>(difficulty->final);
+			msg.addByte(0x0);
+		}
+
+	}
+	writeToOutputBuffer(msg);
 }
 
 void ProtocolGame::sendItemsPrice()

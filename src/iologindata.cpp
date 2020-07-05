@@ -154,7 +154,7 @@ bool IOLoginData::loadPlayerById(Player* player, uint32_t id)
 {
   Database& db = Database::getInstance();
   std::ostringstream query;
-  query << "SELECT `id`, `name`, `account_id`, `group_id`, `sex`, `vocation`, `experience`, `level`, `maglevel`, `health`, `healthmax`, `blessings1`, `blessings2`, `blessings3`, `blessings4`, `blessings5`, `blessings6`, `blessings7`, `blessings8`, `mana`, `manamax`, `manaspent`, `soul`, `lookbody`, `lookfeet`, `lookhead`, `looklegs`, `looktype`, `lookaddons`, `posx`, `posy`, `posz`, `cap`, `prey_stamina_1`, `prey_stamina_2`, `prey_stamina_3`, `lastlogin`, `lastlogout`, `lastip`, `conditions`, `skulltime`, `skull`, `town_id`, `balance`, `offlinetraining_time`, `offlinetraining_skill`, `stamina`, `skill_fist`, `skill_fist_tries`, `skill_club`, `skill_club_tries`, `skill_sword`, `skill_sword_tries`, `skill_axe`, `skill_axe_tries`, `skill_dist`, `skill_dist_tries`, `skill_shielding`, `skill_shielding_tries`, `skill_fishing`, `skill_fishing_tries`, `skill_critical_hit_chance`, `skill_critical_hit_chance_tries`, `skill_critical_hit_damage`, `skill_critical_hit_damage_tries`, `skill_life_leech_chance`, `skill_life_leech_chance_tries`, `skill_life_leech_amount`, `skill_life_leech_amount_tries`, `skill_mana_leech_chance`, `skill_mana_leech_chance_tries`, `skill_mana_leech_amount`,  `skill_mana_leech_amount_tries`, `xpboost_value`, `xpboost_stamina`, `bonus_rerolls` FROM `players` WHERE `id` = " << id;
+  query << "SELECT `id`, `name`, `account_id`, `group_id`, `sex`, `vocation`, `experience`, `level`, `maglevel`, `health`, `healthmax`, `blessings1`, `blessings2`, `blessings3`, `blessings4`, `blessings5`, `blessings6`, `blessings7`, `blessings8`, `mana`, `manamax`, `manaspent`, `soul`, `lookbody`, `lookfeet`, `lookhead`, `looklegs`, `looktype`, `lookaddons`, `posx`, `posy`, `posz`, `cap`, `prey_stamina_1`, `prey_stamina_2`, `prey_stamina_3`, `lastlogin`, `lastlogout`, `lastip`, `conditions`, `skulltime`, `skull`, `town_id`, `balance`, `offlinetraining_time`, `offlinetraining_skill`, `stamina`, `skill_fist`, `skill_fist_tries`, `skill_club`, `skill_club_tries`, `skill_sword`, `skill_sword_tries`, `skill_axe`, `skill_axe_tries`, `skill_dist`, `skill_dist_tries`, `skill_shielding`, `skill_shielding_tries`, `skill_fishing`, `skill_fishing_tries`, `skill_critical_hit_chance`, `skill_critical_hit_chance_tries`, `skill_critical_hit_damage`, `skill_critical_hit_damage_tries`, `skill_life_leech_chance`, `skill_life_leech_chance_tries`, `skill_life_leech_amount`, `skill_life_leech_amount_tries`, `skill_mana_leech_chance`, `skill_mana_leech_chance_tries`, `skill_mana_leech_amount`,  `skill_mana_leech_amount_tries`, `xpboost_value`, `xpboost_stamina`, `bonus_rerolls`, `charm_points`, `charm_expansion`, `bestiary_kills`, `bestiary_tracker`, `charms` FROM `players` WHERE `id` = " << id;
   return loadPlayer(player, db.storeQuery(query.str()));
 }
 
@@ -266,7 +266,7 @@ bool IOLoginData::loadPlayerByName(Player* player, const std::string& name)
 {
   Database& db = Database::getInstance();
   std::ostringstream query;
-  query << "SELECT `id`, `name`, `account_id`, `group_id`, `sex`, `vocation`, `experience`, `level`, `maglevel`, `health`, `healthmax`, `blessings1`, `blessings2`, `blessings3`, `blessings4`, `blessings5`, `blessings6`, `blessings7`, `blessings8`, `mana`, `manamax`, `manaspent`, `soul`, `lookbody`, `lookfeet`, `lookhead`, `looklegs`, `looktype`, `lookaddons`, `posx`, `posy`, `posz`, `cap`, `lastlogin`, `lastlogout`, `lastip`, `conditions`, `skulltime`, `skull`, `town_id`, `balance`, `offlinetraining_time`, `offlinetraining_skill`, `stamina`, `skill_fist`, `skill_fist_tries`, `skill_club`, `skill_club_tries`, `skill_sword`, `skill_sword_tries`, `skill_axe`, `prey_stamina_1`, `prey_stamina_2`, `prey_stamina_3`, `skill_axe_tries`, `skill_dist`, `skill_dist_tries`, `skill_shielding`, `skill_shielding_tries`, `skill_fishing`, `skill_fishing_tries`, `skill_critical_hit_chance`, `skill_critical_hit_chance_tries`, `skill_critical_hit_damage`, `skill_critical_hit_damage_tries`, `skill_life_leech_chance`, `skill_life_leech_chance_tries`, `skill_life_leech_amount`, `skill_life_leech_amount_tries`, `skill_mana_leech_chance`, `skill_mana_leech_chance_tries`, `skill_mana_leech_amount`, `skill_mana_leech_amount_tries`, `xpboost_stamina`, `xpboost_value` FROM `players` WHERE `name` = " << db.escapeString(name);
+  query << "SELECT `id`, `name`, `account_id`, `group_id`, `sex`, `vocation`, `experience`, `level`, `maglevel`, `health`, `healthmax`, `blessings1`, `blessings2`, `blessings3`, `blessings4`, `blessings5`, `blessings6`, `blessings7`, `blessings8`, `mana`, `manamax`, `manaspent`, `soul`, `lookbody`, `lookfeet`, `lookhead`, `looklegs`, `looktype`, `lookaddons`, `posx`, `posy`, `posz`, `cap`, `lastlogin`, `lastlogout`, `lastip`, `conditions`, `skulltime`, `skull`, `town_id`, `balance`, `offlinetraining_time`, `offlinetraining_skill`, `stamina`, `skill_fist`, `skill_fist_tries`, `skill_club`, `skill_club_tries`, `skill_sword`, `skill_sword_tries`, `skill_axe`, `prey_stamina_1`, `prey_stamina_2`, `prey_stamina_3`, `skill_axe_tries`, `skill_dist`, `skill_dist_tries`, `skill_shielding`, `skill_shielding_tries`, `skill_fishing`, `skill_fishing_tries`, `skill_critical_hit_chance`, `skill_critical_hit_chance_tries`, `skill_critical_hit_damage`, `skill_critical_hit_damage_tries`, `skill_life_leech_chance`, `skill_life_leech_chance_tries`, `skill_life_leech_amount`, `skill_life_leech_amount_tries`, `skill_mana_leech_chance`, `skill_mana_leech_chance_tries`, `skill_mana_leech_amount`, `skill_mana_leech_amount_tries`, `xpboost_stamina`, `xpboost_value`, `charm_points`, `charm_expansion`, `bestiary_kills`, `bestiary_tracker`, `charms` FROM `players` WHERE `name` = " << db.escapeString(name);
   return loadPlayer(player, db.storeQuery(query.str()));
 }
 
@@ -347,6 +347,50 @@ bool IOLoginData::loadPlayer(Player* player, DBResult_ptr result)
       delete condition;
     }
     condition = Condition::createCondition(propStream);
+  }
+
+  //load bestiary map
+  unsigned long attrSize;
+  const char* attr = result->getStream("bestiary_kills", attrSize);
+  propStream.init(attr, attrSize);
+
+  size_t bestiary_sizes;
+  if (propStream.read<size_t>(bestiary_sizes)) {
+    //player->bestiaryKills.reserve(bestiary_sizes);
+
+    uint16_t race_id;
+    int32_t kill_value;
+    int8_t gained_value;
+    while (propStream.read<uint16_t>(race_id) && propStream.read<int32_t>(kill_value) && propStream.read<int8_t>(gained_value)) {
+      player->addBestiaryKill(race_id, kill_value, gained_value == 0x01);
+    }
+  }
+
+  //load bestiary tracker
+  attr = result->getStream("bestiary_tracker", attrSize);
+  propStream.init(attr, attrSize);
+
+  size_t bestiaryTracker_sizes;
+  if (propStream.read<size_t>(bestiaryTracker_sizes)) {
+    player->bestiaryTracker.reserve(bestiaryTracker_sizes);
+    uint16_t race_id_value;
+    while (propStream.read<uint16_t>(race_id_value)) {
+      player->manageMonsterTracker(race_id_value);
+    }
+  }
+
+  //load charms map
+  attr = result->getStream("charms", attrSize);
+  propStream.init(attr, attrSize);
+
+  size_t charm_sizes;
+  if (propStream.read<size_t>(charm_sizes)) {
+    player->charmMap.reserve(charm_sizes);
+    uint8_t charm_id;
+    uint16_t race_id_value;
+    while (propStream.read<uint8_t>(charm_id) && propStream.read<uint16_t>(race_id_value)) {
+      player->charmMap[charm_id] = race_id_value;
+    }
   }
 
   if (!player->setVocation(result->getNumber<uint16_t>("vocation"))) {
@@ -814,8 +858,44 @@ bool IOLoginData::savePlayer(Player* player)
     }
   }
 
-  size_t conditionsSize;
-  const char* conditions = propWriteStream.getStream(conditionsSize);
+  size_t attributesSize;
+  const char* attributes = propWriteStream.getStream(attributesSize);
+
+  query << "`conditions` = " << db.escapeBlob(attributes, attributesSize) << ',';
+
+  // bestiarykills
+  propWriteStream.clear();
+  propWriteStream.write<size_t>(player->bestiaryKills.size());
+  for (const auto& it : player->bestiaryKills) {
+    propWriteStream.write<uint16_t>(it.first);
+    const BestiaryPoints& bestiaryPoints = it.second;
+    propWriteStream.write<int32_t>(bestiaryPoints.kills);
+    propWriteStream.write<int8_t>(bestiaryPoints.gained);
+  }
+
+  attributes = propWriteStream.getStream(attributesSize);
+  query << "`bestiary_kills` = " << db.escapeBlob(attributes, attributesSize) << ',';
+
+  // bestiaryTracker
+  propWriteStream.clear();
+  propWriteStream.write<size_t>(player->bestiaryTracker.size());
+  for (auto it = player->bestiaryTracker.begin(), end = player->bestiaryTracker.end(); it != end; ++it) {
+    propWriteStream.write<uint16_t>(*it);
+  }
+
+  attributes = propWriteStream.getStream(attributesSize);
+  query << "`bestiary_tracker` = " << db.escapeBlob(attributes, attributesSize) << ',';
+
+  // charmMap
+  propWriteStream.clear();
+  propWriteStream.write<size_t>(player->charmMap.size());
+  for (const auto& it : player->charmMap) {
+    propWriteStream.write<uint8_t>(it.first);
+    propWriteStream.write<uint16_t>(it.second);
+  }
+
+  attributes = propWriteStream.getStream(attributesSize);
+  query << "`charms` = " << db.escapeBlob(attributes, attributesSize) << ',';
 
   //First, an UPDATE query to write the player itself
   query.str(std::string());
@@ -854,8 +934,6 @@ bool IOLoginData::savePlayer(Player* player)
   if (player->lastIP != 0) {
     query << "`lastip` = " << player->lastIP << ',';
   }
-
-  query << "`conditions` = " << db.escapeBlob(conditions, conditionsSize) << ',';
 
   if (g_game.getWorldType() != WORLD_TYPE_PVP_ENFORCED) {
     int64_t skullTime = 0;

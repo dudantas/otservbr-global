@@ -441,6 +441,31 @@ class Player final : public Creature, public Cylinder
 		bool getStorageValue(const uint32_t key, int32_t& value) const;
 		void genReservedStorageRange();
 
+		void addBestiaryKill(uint16_t racedid, int32_t value, bool gained);
+		bool getBestiaryKill(uint16_t racedid, int32_t value) const;
+		int32_t getBestiaryKills(uint16_t racedid);
+
+		bool gainedCharmPoints(uint16_t racedid);
+		uint16_t getCurrentCreature(uint8_t charmid);
+		int8_t getMonsterCharm(uint16_t racedid);
+		bool isUnlockedCharm(uint8_t charmid) {
+			auto it = charmMap.find(charmid);
+			return it != charmMap.end();
+		}
+
+		bool hasCharmExpansion() {
+			return charmExpansion;
+		}
+		void setCharmExpansion(bool v) {
+			charmExpansion = v;
+		}
+		uint32_t getCharmPrice() {
+			uint32_t value = (level * ((charmExpansion ? 75 : 100)));
+			return value;
+		}
+		void addCharm(uint8_t charmid, uint16_t raceid = 0);
+		void removeCharm(uint8_t charmid, bool remove = false);
+
 		void setGroup(Group* newGroup) {
 			group = newGroup;
 		}
@@ -576,6 +601,19 @@ class Player final : public Creature, public Cylinder
 		}
 		uint32_t getMaxMana() const override {
 			return std::max<int32_t>(0, manaMax + varStats[STAT_MAXMANAPOINTS]);
+		}
+
+		uint32_t getCharmPoints() const {
+			return charmPoints;
+		}
+		void setCharmPoints(uint32_t newvalue) {
+			charmPoints = newvalue;
+		}
+		uint16_t getLastBestiaryMonster() const {
+			return lastBestiaryMonster;
+		}
+		void setLastBestiaryMonster(uint16_t newvalue) {
+			lastBestiaryMonster = newvalue;
 		}
 
 		Item* getInventoryItem(slots_t slot) const;
@@ -1232,6 +1270,31 @@ class Player final : public Creature, public Cylinder
 				client->sendImbuementWindow(item);
 			}
 		}
+		void sendBestiaryGroups() {
+			if (client) {
+				client->sendBestiaryGroups();
+			}
+		}
+		void sendBestiaryOverview(std::string& name) {
+			if (client) {
+				client->sendBestiaryOverview(name);
+			}
+		}
+		void sendBestiaryOverview(std::vector<uint16_t> monsters) {
+			if (client) {
+				client->sendBestiaryOverview(monsters);
+			}
+		}
+		void sendBestiaryMonsterData(uint16_t monsterId) {
+			if (client) {
+				client->sendBestiaryMonsterData(monsterId);
+			}
+		}
+		void sendCharmData() {
+			if (client) {
+				client->sendCharmData();
+			}
+		}
 		void sendCloseContainer(uint8_t cid) {
 			if (client) {
 				client->sendCloseContainer(cid);
@@ -1268,7 +1331,11 @@ class Player final : public Creature, public Cylinder
 				client->writeToOutputBuffer(message);
 			}
 		}
-
+		void sendBestiaryTracker() {
+			if (client) {
+				client->sendBestiaryTracker();
+			}
+		}
 		void sendStoreOpen(uint8_t serviceType) {
 			if (client) {
 				client->sendOpenStore(serviceType);
@@ -1366,7 +1433,10 @@ class Player final : public Creature, public Cylinder
 		void onEquipImbueItem(Imbuement* imbuement);
 		void onDeEquipImbueItem(Imbuement* imbuement);
 
-		//Custom: Anti bug do market
+		void manageMonsterTracker(uint16_t raceid);
+		bool monsterInTracker(uint16_t raceid);
+
+		// Market exhausted
 		bool isMarketExhausted() const;
 		void updateMarketExhausted() {
 			lastMarketInteraction = OTSYS_TIME();
@@ -1472,6 +1542,12 @@ class Player final : public Creature, public Cylinder
 		std::map<uint8_t, int64_t> moduleDelayMap;
 		std::map<uint32_t, int32_t> storageMap;
 
+		std::map<uint16_t, BestiaryPoints> bestiaryKills;
+
+		std::unordered_map<uint8_t, uint16_t> charmMap;
+
+		std::vector<uint16_t> bestiaryTracker;
+
 		std::map<uint32_t, Reward*> rewardMap;
 
 		std::vector<OutfitEntry> outfits;
@@ -1547,22 +1623,25 @@ class Player final : public Creature, public Cylinder
 		uint32_t windowTextId = 0;
 		uint32_t editListId = 0;
 		uint32_t manaMax = 0;
+		uint32_t charmPoints = 0;
+		uint32_t premiumDays = 0;
+		uint32_t coinBalance = 0;
+
 		int32_t varSkills[SKILL_LAST + 1] = {};
 		int32_t varStats[STAT_LAST + 1] = {};
 		int32_t purchaseCallback = -1;
 		int32_t saleCallback = -1;
 		int32_t MessageBufferCount = 0;
-		uint32_t premiumDays = 0;
 		int32_t bloodHitCount = 0;
 		int32_t shieldBlockCount = 0;
 		int32_t offlineTrainingSkill = -1;
 		int32_t offlineTrainingTime = 0;
 		int32_t idleTime = 0;
-		uint32_t coinBalance = 0;
-		uint16_t expBoostStamina = 0;
 
+		uint16_t expBoostStamina = 0;
 		uint16_t lastStatsTrainingTime = 0;
 		uint16_t staminaMinutes = 2520;
+
 		std::vector<uint16_t> preyStaminaMinutes = {7200, 7200, 7200};
 		std::vector<uint16_t> preyBonusType = {0, 0, 0};
 		std::vector<uint16_t> preyBonusValue = {0, 0, 0};
@@ -1574,6 +1653,8 @@ class Player final : public Creature, public Cylinder
 		uint16_t grindingXpBoost = 0;
 		uint16_t storeXpBoost = 0;
 		uint16_t staminaXpBoost = 100;
+		uint16_t lastBestiaryMonster = 0;
+
 		int16_t lastDepotId = -1;
 
 		// New Prey
@@ -1610,6 +1691,7 @@ class Player final : public Creature, public Cylinder
 		bool isConnecting = false;
 		bool addAttackSkillPoint = false;
 		bool inventoryAbilities[CONST_SLOT_LAST + 1] = {};
+		bool charmExpansion = false;
 
 		static uint32_t playerAutoID;
 

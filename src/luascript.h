@@ -571,6 +571,10 @@ class LuaScriptInterface
 		static int luaGameHasEffect(lua_State* L);
 		static int luaGameHasDistanceEffect(lua_State* L);
 
+		static int luaGameGetBestiaries(lua_State* L);
+		static int luaGameGetBestiary(lua_State* L);
+		static int luaGameGetCharms(lua_State* L);
+
 		// Variant
 		static int luaVariantCreate(lua_State* L);
 
@@ -1054,6 +1058,21 @@ class LuaScriptInterface
 
 		static int luaPlayerGetClient(lua_State* L);
 
+		static int luaPlayerGetBestiaryKill(lua_State* L);
+		static int luaPlayerAddBestiaryKill(lua_State* L);
+		static int luaPlayerGainedCharmPoints(lua_State* L);
+
+		static int luaPlayerSetCharmPoints(lua_State* L);
+		static int luaPlayerGetCharmPoints(lua_State* L);
+		static int luaPlayerAddCharm(lua_State* L);
+		static int luaPlayerRemoveCharm(lua_State* L);
+		static int luaPlayerGetCurrentCreature(lua_State* L);
+		static int luaPlayerGetMonsterCharm(lua_State* L);
+		static int luaPlayerIsUnlockedCharm(lua_State* L);
+
+		static int luaPlayerSendBestiaryTracker(lua_State* L);
+        static int luaPlayerMonsterInTracker(lua_State* L);
+
 		static int luaPlayerGetHouse(lua_State* L);
 		static int luaPlayerSendHouseWindow(lua_State* L);
 		static int luaPlayerSetEditHouse(lua_State* L);
@@ -1093,6 +1112,7 @@ class LuaScriptInterface
 		static int luaMonsterIsMonster(lua_State* L);
 
 		static int luaMonsterGetType(lua_State* L);
+		static int luaMonsterGetRaceId(lua_State* L);
 
 		static int luaMonsterGetSpawnPosition(lua_State* L);
 		static int luaMonsterIsInSpawnRange(lua_State* L);
@@ -1381,6 +1401,7 @@ class LuaScriptInterface
 		static int luaMonsterTypeDefense(lua_State* L);
 		static int luaMonsterTypeOutfit(lua_State* L);
 		static int luaMonsterTypeRace(lua_State* L);
+		static int luaMonsterTypeRaceId(lua_State* L);
 		static int luaMonsterTypeCorpseId(lua_State* L);
 		static int luaMonsterTypeManaCost(lua_State* L);
 		static int luaMonsterTypeBaseSpeed(lua_State* L);
@@ -1589,6 +1610,13 @@ class LuaScriptInterface
 		static int luaImbuementIsPremium(lua_State* L);
 		static int luaImbuementGetElementDamage(lua_State* L);
 		static int luaImbuementGetCombatType(lua_State* L);
+
+		// Bestiary
+		static int luaCreateBestiary(lua_State* L);
+		static int luaBestiaryGetName(lua_State* L);
+		static int luaBestiaryGetRaceByID(lua_State* L);
+		static int luaBestiaryGetDifficulty(lua_State* L);
+		static int luaBestiaryGetRaces(lua_State* L);
 
 		//
 		std::string lastLuaError;

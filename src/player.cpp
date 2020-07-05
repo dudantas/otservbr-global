@@ -2061,7 +2061,19 @@ void Player::death(Creature* lastHitCreature)
 
 		sumMana += manaSpent;
 
-		double deathLossPercent = getLostPercent() * (unfairFightReduction / 100.);
+		double percentCharm = 1.0;
+		if (lastHitCreature) {
+			Monster* tmpMonster = lastHitCreature->getMonster();
+			if (tmpMonster && tmpMonster->getRaceId() > 0 && getCurrentCreature(12) == tmpMonster->getRaceId()) {
+				percentCharm = 0.7;
+			}
+		}
+
+		if (g_game.getWorldType() == WORLD_TYPE_PVP && getSkull() == SKULL_WHITE) {
+			setSkull(SKULL_NONE);
+		}
+
+		double deathLossPercent = getLostPercent() * (unfairFightReduction / 100.) * percentCharm;
 
 		lostMana = static_cast<uint64_t>(sumMana * deathLossPercent);
 
@@ -4933,6 +4945,132 @@ void Player::onDeEquipImbueItem(Imbuement* imbuement)
 	}
 
 	return;
+}
+
+// Bestiary
+void Player::addBestiaryKill(uint16_t racedid, int32_t value, bool gained)
+{
+	if (value != -1) {
+		auto it = bestiaryKills.find(racedid);
+		if (it == bestiaryKills.end()) {
+			BestiaryPoints bestiaryPoints;
+			bestiaryPoints.kills = value;
+			bestiaryPoints.gained = gained;
+			bestiaryKills[racedid] = bestiaryPoints;
+		} else {
+			BestiaryPoints& bestiaryPoints = it->second;
+			bestiaryPoints.kills = bestiaryPoints.kills + value;
+			if (gained) {
+				bestiaryPoints.gained = gained;
+			}
+		}
+
+	} else {
+		bestiaryKills.erase(racedid);
+	}
+}
+
+bool Player::getBestiaryKill(uint16_t racedid, int32_t value) const
+{
+	auto it = bestiaryKills.find(racedid);
+	if (it == bestiaryKills.end()) {
+		value = -1;
+		return false;
+	}
+
+	const BestiaryPoints& bestiaryPoints = it->second;
+	value = bestiaryPoints.kills;
+	return true;
+}
+
+int32_t Player::getBestiaryKills(uint16_t racedid)
+{
+	auto it = bestiaryKills.find(racedid);
+	if (it != bestiaryKills.end()) {
+		BestiaryPoints& bestiaryPoints = it->second;
+		return bestiaryPoints.kills;
+	}
+
+	return 0;
+}
+
+bool Player::gainedCharmPoints(uint16_t racedid)
+{
+	auto it = bestiaryKills.find(racedid);
+	if (it != bestiaryKills.end()) {
+		BestiaryPoints& bestiaryPoints = it->second;
+		return bestiaryPoints.gained;
+	}
+
+	return false;
+}
+
+uint16_t Player::getCurrentCreature(uint8_t charmid)
+{
+	for (const auto& it : charmMap) {
+		if (it.first == charmid) {
+			return it.second;
+		}
+	}
+
+	return 0;
+}
+
+void Player::addCharm(uint8_t charmid, uint16_t raceid)
+{
+	charmMap[charmid] = raceid;
+}
+
+void Player::removeCharm(uint8_t charmid, bool remove)
+{
+	if (remove) { // eraser
+		charmMap.erase(charmid);
+	} else {
+		charmMap[charmid] = 0;
+	}
+}
+
+int8_t Player::getMonsterCharm(uint16_t racedid)
+{
+	for (const auto& it : charmMap) {
+		if (it.second == racedid) {
+			return it.first;
+		}
+	}
+
+	return -1;
+}
+
+void Player::manageMonsterTracker(uint16_t raceid)
+{
+	int count = 0;
+	for (const auto& race : bestiaryTracker) {
+		if (race == raceid) {
+			bestiaryTracker.erase(bestiaryTracker.begin() + count);
+			sendBestiaryTracker();
+			return;
+		}
+		count++;
+	}
+
+	if (bestiaryTracker.size() >= 250) {
+		return;
+	}
+
+	bestiaryTracker.emplace_back(raceid);
+
+	sendBestiaryTracker();
+}
+
+bool Player::monsterInTracker(uint16_t raceid)
+{
+	for (const auto& race : bestiaryTracker) {
+		if (race == raceid) {
+			return true;
+		}
+	}
+
+	return false;
 }
 
 /*******************************************************************************

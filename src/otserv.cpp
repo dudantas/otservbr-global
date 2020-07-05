@@ -21,6 +21,8 @@
 
 #include <fstream>
 
+#include "bestiary.h"
+#include "charm.h"
 #include "configmanager.h"
 #include "databasemanager.h"
 #include "databasetasks.h"
@@ -43,6 +45,8 @@ Dispatcher g_dispatcher;
 Scheduler g_scheduler;
 
 Game g_game;
+Bestiaries g_bestiaries;
+Charms g_charms;
 ConfigManager g_config;
 Monsters g_monsters;
 Vocations g_vocations;
@@ -260,6 +264,18 @@ void mainLoader(int, char*[], ServiceManager* services) {
 	std::cout << ">> Loading outfits" << std::endl;
 	if (!Outfits::getInstance().loadFromXml()) {
 		startupErrorMessage("Unable to load outfits!");
+		return;
+	}
+
+	std::cout << ">> Loading bestiary" << std::endl;
+	if (!g_bestiaries.loadFromXml()) {
+		startupErrorMessage("Unable to load bestiaries!");
+		return;
+	}
+
+	std::cout << ">> Loading charms" << std::endl;
+	if (!g_charms.loadFromXml()) {
+		startupErrorMessage("Unable to load charms!");
 		return;
 	}
 
