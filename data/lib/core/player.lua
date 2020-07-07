@@ -323,3 +323,19 @@ function Player.getMarriageDescription(thing)
 	end
 	return descr
 end
+
+function Player.sendUnlockMonster(self, monsterid)
+	local msg = NetworkMessage()
+	msg:addByte(0xD9)
+	msg:addU16(monsterid)
+	msg:sendToPlayer(self)
+end
+
+function Player.sendUnlockMonsterInfor(self, monsterid, diff)
+	local msg = NetworkMessage()
+	msg:addByte(0xDD)
+	msg:addByte(0x08)
+	msg:addU16(monsterid)
+	msg:addByte(diff)
+	msg:sendToPlayer(self)
+end

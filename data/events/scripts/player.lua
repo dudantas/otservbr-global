@@ -910,6 +910,20 @@ function Player:clearImbuement(item, slot)
 end
 
 function Player:onCombat(target, item, primaryDamage, primaryType, secondaryDamage, secondaryType)
+	if target then
+		local monster = Monster(target:getId())
+		if monster and monster:getType() and monster:getType():raceId() > 0 then
+			local atualCharm = self:getMonsterCharm(monster:getType():raceId())
+			if atualCharm == 6 and math.random(1, 10000) <= 100 then
+				local condition = Condition(CONDITION_PARALYZE)
+				condition:setParameter(CONDITION_PARAM_TICKS, 10000)
+				condition:setFormula(-0.40, -0.15, -0.55, -0.15)
+				target:addCondition(condition)
+				self:sendTextMessage(MESSAGE_DAMAGE_DEALT, "Active charm 'Cripple'")
+			end
+		end
+	end
+
 	if not item or not target then
 		return primaryDamage, primaryType, secondaryDamage, secondaryType
 	end

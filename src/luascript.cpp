@@ -23,6 +23,7 @@
 
 #include "bestiary.h"
 #include "charm.h"
+#include "events.h"
 #include "luascript.h"
 #include "chat.h"
 #include "player.h"
@@ -46,6 +47,7 @@
 extern Bestiaries g_bestiaries;
 extern Chat* g_chat;
 extern Charms g_charms;
+extern Events* g_events;
 extern Game g_game;
 extern Monsters g_monsters;
 extern ConfigManager g_config;
@@ -4887,8 +4889,14 @@ int LuaScriptInterface::luaGameCreateContainer(lua_State* L)
 
 int LuaScriptInterface::luaGameCreateMonster(lua_State* L)
 {
-	// Game.createMonster(monsterName, position[, extended = false[, force = false]])
-	Monster* monster = Monster::createMonster(getString(L, 1));
+	// Game.createMonster(monsterName or raceid, position[, extended = false[, force = false]])
+	Monster* monster = nullptr;
+	if (isNumber(L, 1)) {
+		monster = Monster::createMonsterByRace(getNumber<uint16_t>(L, 1));
+	} else {
+		monster = Monster::createMonster(getString(L, 1));
+	}
+
 	if (!monster) {
 		lua_pushnil(L);
 		return 1;
@@ -4897,16 +4905,21 @@ int LuaScriptInterface::luaGameCreateMonster(lua_State* L)
 	const Position& position = getPosition(L, 2);
 	bool extended = getBoolean(L, 3, false);
 	bool force = getBoolean(L, 4, false);
+	Creature* master = getCreature(L, 5);
 	if (g_game.placeCreature(monster, position, extended, force)) {
-		pushUserdata<Monster>(L, monster);
-		setMetatable(L, -1, "Monster");
+		if (!g_events->eventMonsterOnSpawn(monster, position, false, true)) {
+			delete monster;
+			lua_pushnil(L);
+		} else {
+			pushUserdata<Monster>(L, monster);
+			setMetatable(L, -1, "Monster");
+		}
 	} else {
 		delete monster;
 		lua_pushnil(L);
 	}
 	return 1;
 }
-
 
 int LuaScriptInterface::luaGameGenerateNpc(lua_State* L)
 {

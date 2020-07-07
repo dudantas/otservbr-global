@@ -42,14 +42,16 @@ function Monster:onDropLoot(corpse)
 	end
 end
 
-function Monster:onSpawn(position)
+function Monster:onSpawn(position, startup, artificial)
+	if not self:getType():canSpawn(position) then
+		return false
+	end
+
 	if self:getType():isRewardBoss() then
 		self:setReward(true)
 	end
 
-	if not self:getType():canSpawn(position) then
-		self:remove()
-	else
+	if not startup then
 		local spec = Game.getSpectators(position, false, false)
 		for _, pid in pairs(spec) do
 			local monster = Monster(pid)
@@ -57,11 +59,9 @@ function Monster:onSpawn(position)
 				monster:remove()
 			end
 		end
-
 		if self:getName():lower() == 'iron servant replica' then
 			local chance = math.random(100)
-			if Game.getStorageValue(GlobalStorage.ForgottenKnowledge.MechanismDiamond) >= 1
-			and Game.getStorageValue(GlobalStorage.ForgottenKnowledge.MechanismGolden) >= 1 then
+			if Game.getStorageValue(GlobalStorage.ForgottenKnowledge.MechanismDiamond) >= 1 and Game.getStorageValue(GlobalStorage.ForgottenKnowledge.MechanismGolden) >= 1 then
 				if chance > 30 then
 					local chance2 = math.random(2)
 					if chance2 == 1 then
@@ -69,23 +69,24 @@ function Monster:onSpawn(position)
 					elseif chance2 == 2 then
 						Game.createMonster('golden servant replica', self:getPosition(), false, true)
 					end
-					self:remove()
+					return false
 				end
 				return true
 			end
 			if Game.getStorageValue(GlobalStorage.ForgottenKnowledge.MechanismDiamond) >= 1 then
 				if chance > 30 then
 					Game.createMonster('diamond servant replica', self:getPosition(), false, true)
-					self:remove()
+					return false
 				end
 			end
 			if Game.getStorageValue(GlobalStorage.ForgottenKnowledge.MechanismGolden) >= 1 then
 				if chance > 30 then
 					Game.createMonster('golden servant replica', self:getPosition(), false, true)
-					self:remove()
+					return false
 				end
 			end
-			return true
 		end
 	end
+
+	return true
 end

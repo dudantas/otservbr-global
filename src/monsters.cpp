@@ -19,9 +19,9 @@
 
 #include "otpch.h"
 
-#include "bestiary.h"
 #include "monsters.h"
 #include "monster.h"
+#include "bestiary.h"
 #include "spells.h"
 #include "combat.h"
 #include "weapons.h"
@@ -30,11 +30,11 @@
 
 #include "pugicast.h"
 
-extern Bestiaries g_bestiaries;
 extern Game g_game;
 extern Spells* g_spells;
 extern Monsters g_monsters;
 extern ConfigManager g_config;
+extern Bestiaries g_bestiaries;
 
 spellBlock_t::~spellBlock_t()
 {
@@ -828,7 +828,7 @@ MonsterType* Monsters::loadMonster(const std::string& file, const std::string& m
 	}
 
 	if ((attr = monsterNode.attribute("speed"))) {
-		mType->info.baseSpeed = pugi::cast<int32_t>(attr.value());
+		mType->info.baseSpeed = pugi::cast<int32_t>(attr.value()) * g_config.getDouble(ConfigManager::RATE_MONSTER_SPEED);
 	}
 
 	if ((attr = monsterNode.attribute("manacost"))) {
@@ -888,6 +888,8 @@ MonsterType* Monsters::loadMonster(const std::string& file, const std::string& m
 				mType->info.isSummonable = attr.as_bool();
 			} else if (strcasecmp(attrName, "rewardboss") == 0) {
 				mType->info.isRewardBoss = attr.as_bool();
+			} else if (strcasecmp(attrName, "preyable") == 0) {
+				mType->info.isPreyable = attr.as_bool();
 			} else if (strcasecmp(attrName, "attackable") == 0) {
 				mType->info.isAttackable = attr.as_bool();
 			} else if (strcasecmp(attrName, "hostile") == 0) {
@@ -1431,6 +1433,9 @@ bool Monsters::loadLootItem(const pugi::xml_node& node, LootBlock& lootBlock)
 	if ((attr = node.attribute("unique"))) {
 		lootBlock.unique = attr.as_bool();
 	}
+	if ((attr = node.attribute("raid"))) {
+		lootBlock.raid = attr.as_bool();
+	}
 	return true;
 }
 
@@ -1442,6 +1447,19 @@ void Monsters::loadLootContainer(const pugi::xml_node& node, LootBlock& lBlock)
 			lBlock.childLoot.emplace_back(std::move(lootBlock));
 		}
 	}
+}
+
+// Prey Monsters
+std::vector<std::string> Monsters::getPreyMonsters()
+{
+	std::vector<std::string> monsterList;
+	for (const auto& m : monsters) {
+		if (m.second.info.experience > 0 && m.second.info.isPreyable && !m.second.info.isRewardBoss && m.second.info.staticAttackChance > 0) {
+			monsterList.push_back(m.first);
+		}
+	}
+
+	return monsterList;
 }
 
 MonsterType* Monsters::getMonsterType(const std::string& name)
@@ -1460,14 +1478,6 @@ MonsterType* Monsters::getMonsterType(const std::string& name)
 	return &it->second;
 }
 
-void Monsters::addMonsterType(const std::string& name, MonsterType* mType)
-{
-	// Suppress [-Werror=unused-but-set-parameter]
-	// https://stackoverflow.com/questions/1486904/how-do-i-best-silence-a-warning-about-unused-variables
-	(void) mType;
-	mType = &monsters[asLowerCaseString(name)];
-}
-
 MonsterType* Monsters::getMonsterTypeByRace(uint16_t raceid)
 {
 	auto it = raceidMonsters.find(raceid);
@@ -1476,4 +1486,12 @@ MonsterType* Monsters::getMonsterTypeByRace(uint16_t raceid)
 	}
 
 	return nullptr;
+}
+
+void Monsters::addMonsterType(const std::string& name, MonsterType* mType)
+{
+	// Suppress [-Werror=unused-but-set-parameter]
+	// https://stackoverflow.com/questions/1486904/how-do-i-best-silence-a-warning-about-unused-variables
+	(void) mType;
+	mType = &monsters[asLowerCaseString(name)];
 }

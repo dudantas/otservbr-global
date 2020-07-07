@@ -863,7 +863,7 @@ bool IOLoginData::savePlayer(Player* player)
 
   query << "`conditions` = " << db.escapeBlob(attributes, attributesSize) << ',';
 
-  // bestiarykills
+  // bestiary kills
   propWriteStream.clear();
   propWriteStream.write<size_t>(player->bestiaryKills.size());
   for (const auto& it : player->bestiaryKills) {

@@ -1,6 +1,6 @@
 /**
  * The Forgotten Server - a free and open-source MMORPG server emulator
- * Copyright (C) 2019  Mark Samman <mark.samman@gmail.com>
+ * Copyright (C) 2019 Mark Samman <mark.samman@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,11 +24,10 @@
 #include "monster.h"
 #include "configmanager.h"
 #include "scheduler.h"
-
-#include "pugicast.h"
 #include "events.h"
 
-extern Events* g_events;
+#include "pugicast.h"
+
 extern ConfigManager g_config;
 extern Monsters g_monsters;
 extern Game g_game;
@@ -162,7 +161,7 @@ bool Spawns::isInZone(const Position& centerPos, int32_t radius, const Position&
 	}
 
 	return ((pos.getX() >= centerPos.getX() - radius) && (pos.getX() <= centerPos.getX() + radius) &&
-	        (pos.getY() >= centerPos.getY() - radius) && (pos.getY() <= centerPos.getY() + radius));
+			(pos.getY() >= centerPos.getY() - radius) && (pos.getY() <= centerPos.getY() + radius));
 }
 
 void Spawn::startSpawnCheck()
@@ -218,9 +217,13 @@ bool Spawn::spawnMonster(uint32_t spawnId, MonsterType* mType, const Position& p
 	monster->setMasterPos(pos);
 	monster->incrementReferenceCounter();
 
+	if (!g_events->eventMonsterOnSpawn(monster, pos, startup, false)) {
+		g_game.removeCreature(monster);
+		return false;
+	}
+
 	spawnedMap.insert(spawned_pair(spawnId, monster));
 	spawnMap[spawnId].lastSpawn = OTSYS_TIME();
-	g_events->eventMonsterOnSpawn(monster, pos);
 	return true;
 }
 
@@ -290,11 +293,17 @@ void Spawn::cleanup()
 {
 	auto it = spawnedMap.begin();
 	while (it != spawnedMap.end()) {
-	        uint32_t spawnId = it->first;
+		uint32_t spawnId = it->first;
 		Monster* monster = it->second;
-	        if (monster->isRemoved()) {
-		        spawnMap[spawnId].lastSpawn = OTSYS_TIME();
+		if (monster->isRemoved()) {
+			if (spawnId != 0) {
+				spawnMap[spawnId].lastSpawn = OTSYS_TIME();
+			}
+
 			monster->decrementReferenceCounter();
+			it = spawnedMap.erase(it);
+		} else if (!isInSpawnZone(monster->getPosition()) && spawnId != 0) {
+			spawnedMap.insert(spawned_pair(0, monster));
 			it = spawnedMap.erase(it);
 		} else {
 			++it;
@@ -316,8 +325,9 @@ bool Spawn::addMonster(const std::string& name, const Position& pos, Direction d
 	sb.mType = mType;
 	sb.pos = pos;
 	sb.direction = dir;
+
 	sb.interval = scheduleInterval;
-	sb.lastSpawn = 0;
+	sb.lastSpawn = OTSYS_TIME() - 1000;
 
 	uint32_t spawnId = spawnMap.size() + 1;
 	spawnMap[spawnId] = sb;

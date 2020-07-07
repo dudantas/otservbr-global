@@ -32,10 +32,9 @@ using CreatureList = std::list<Creature*>;
 
 enum TargetSearchType_t {
 	TARGETSEARCH_DEFAULT,
+	TARGETSEARCH_RANDOM,
+	TARGETSEARCH_ATTACKRANGE,
 	TARGETSEARCH_NEAREST,
-	TARGETSEARCH_HP,
-	TARGETSEARCH_DAMAGE,
-	TARGETSEARCH_RANDOM
 };
 
 class Monster final : public Creature
@@ -63,6 +62,12 @@ class Monster final : public Creature
 		void setID() override {
 			if (id == 0) {
 				id = monsterAutoID++;
+				setCombatID();
+			}
+		}
+		void setCombatID() override {
+			if (combatid == 0) {
+				combatid = id;
 			}
 		}
 
@@ -99,11 +104,11 @@ class Monster final : public Creature
 		int32_t getDefense() const override {
 			return mType->info.defense;
 		}
-		bool isPushable() const override {
-			return mType->info.pushable && baseSpeed != 0;
-		}
 		uint16_t getRaceId() const {
 			return mType->info.raceid;
+		}
+		bool isPushable() const override {
+			return mType->info.pushable && baseSpeed != 0;
 		}
 		bool isAttackable() const override {
 			return mType->info.isAttackable;
@@ -196,6 +201,26 @@ class Monster final : public Creature
 			return ignoreFieldDamage;
 		}
 
+		bool isRaid() {
+			return raid;
+		}
+
+		void isRaid(bool b) {
+			raid = b;
+		}
+
+		void setRemoveTime(int32_t decay) override {
+			removeTime = decay;
+		}
+
+		int32_t getRemoveTime() {
+			return removeTime;
+		}
+
+		bool inChallengeFocus() const {
+			return challengeFocusDuration > 0;
+		}
+
 		BlockType_t blockHit(Creature* attacker, CombatType_t combatType, int32_t& damage,
 							 bool checkDefense = false, bool checkArmor = false, bool field = false) override;
 
@@ -222,6 +247,7 @@ class Monster final : public Creature
 		int32_t targetChangeCooldown = 0;
 		int32_t challengeFocusDuration = 0;
 		int32_t stepDuration = 0;
+		int32_t removeTime = -1;
 
 		Position masterPos;
 
@@ -230,6 +256,7 @@ class Monster final : public Creature
 		bool isMasterInRange = false;
 		bool randomStepping = false;
 		bool ignoreFieldDamage = false;
+		bool raid = false;
 
 		void onCreatureEnter(Creature* creature);
 		void onCreatureLeave(Creature* creature);

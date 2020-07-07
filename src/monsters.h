@@ -45,6 +45,7 @@ struct LootBlock {
 	int32_t shootRange;
 	int32_t hitChance;
 	bool unique;
+	bool raid;
 
 	std::vector<LootBlock> childLoot;
 	LootBlock() {
@@ -62,6 +63,7 @@ struct LootBlock {
 		shootRange = -1;
 		hitChance = -1;
 		unique = false;
+		raid = false;
 	}
 };
 
@@ -138,9 +140,10 @@ class MonsterType
 
 		LightInfo light = {};
 		uint16_t lookcorpse = 0;
-		uint16_t raceid = 0;
 
 		uint64_t experience = 0;
+
+		uint16_t raceid = 0;
 
 		uint32_t manaCost = 0;
 		uint32_t yellChance = 0;
@@ -183,6 +186,7 @@ class MonsterType
 		bool isPet = false;
 		bool isPassive = false;
 		bool isRewardBoss = false;
+		bool isPreyable = true;
 		bool canWalkOnEnergy = true;
 		bool canWalkOnFire = true;
 		bool canWalkOnPoison = true;
@@ -267,10 +271,12 @@ class Monsters
 		bool reload();
 
 		MonsterType* getMonsterType(const std::string& name);
-		void addMonsterType(const std::string& name, MonsterType* mType);
 		MonsterType* getMonsterTypeByRace(uint16_t raceid);
+		void addMonsterType(const std::string& name, MonsterType* mType);
 		bool deserializeSpell(MonsterSpell* spell, spellBlock_t& sb, const std::string& description = "");
 
+		std::vector<std::string> getPreyMonsters();
+		
 		std::unique_ptr<LuaScriptInterface> scriptInterface;
 		std::map<std::string, MonsterType> monsters;
 		std::map<uint16_t, std::string> raceidMonsters;
