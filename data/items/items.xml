@@ -3047,19 +3047,6 @@
 		<attribute key="weight" value="90" />
 		<attribute key="slotType" value="ring" />
 	</item>
-	<item id="2358" article="a" name="pair of skelot boots">
-		<attribute key="description" value="With this boot, your regeneration is improved. A boot worn by the strongest. This item can be purchased in our store." />
-		<attribute key="weight" value="800" />
-		<attribute key="slotType" value="feet" />
-		<attribute key="healthGain" value="50" />
-		<attribute key="healthTicks" value="3000" />
-		<attribute key="manaGain" value="50" />
-		<attribute key="manaTicks" value="3000" />
-		<attribute key="showattributes" value="1" />
-		<attribute key="imbuingSlots" value="1" />
-		<attribute key="armor" value="1" />
-		<attribute key="speed" value="40" />
-	</item>
 	<item id="2359" article="a" name="djinn's lamp">
 		<attribute key="description" value="(This item has 2 charges left)." />
 		<attribute key="weight" value="600" />
@@ -43302,7 +43289,7 @@
 		<attribute key="slotType" value="backpack" />
 		<attribute key="imbuingSlots" value="1" />
 	</item>
-	<item id="34914" article="a" name="skelot cake" >
+	<item id="34914" article="a" name="cake" >
 		<attribute key="weight" value="500" />
 	</item>
 	<item id="34915" article="a" name="birthday card" >

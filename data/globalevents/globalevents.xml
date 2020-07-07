@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <globalevents>
-	<globalevent name="anuncios30" interval="1800000" script="anuncios30.lua" />
+	<globalevent name="Advertisement" interval="1800000" script="advertisement.lua" />
 
 	<!-- Scarllet Etzel -->
 	<globalevent name="randomMirrors" interval="20000" script="quests/grave_danger/cobra_bastion/randomMirrors.lua" />

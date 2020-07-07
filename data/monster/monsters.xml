@@ -173,7 +173,6 @@
 	<monster name="Training Monk" file="Customs/training monk.xml"/>
 	<monster name="Knight Training" file="Customs/knight training.xml"/>
 	<monster name="Event Zombie" file="Customs/event_zombie.xml"/>
-	<monster name="Pinhata Skelot" file="Customs/pinhata_skelot.xml"/>
 	
 	<!-- Grimvale -->
 	<monster name="Werebadger" file="Grimvale/Werebadger.xml"/>

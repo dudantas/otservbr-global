@@ -113,7 +113,7 @@ local foods = {
 }
 
 function onUse(player, item, fromPosition, target, toPosition, isHotkey)
-	if item.itemid == 34502 then	
+	if item.itemid == 34502 then
 		if player:getStorageValue(Storage.DreamCourts.TheSevenKeys.Count) == 4 then
 			player:setStorageValue(Storage.DreamCourts.TheSevenKeys.Mushroom, 2)
 			player:setStorageValue(Storage.DreamCourts.TheSevenKeys.Count, player:getStorageValue(Storage.DreamCourts.TheSevenKeys.Count) + 1)
@@ -122,33 +122,19 @@ function onUse(player, item, fromPosition, target, toPosition, isHotkey)
 			return true
 		end
 	end
-	
-	if item.itemid == 34914 then -- skelot cake
-		if player:getStorageValue(item.itemid) < os.stime() then
-			player:setStorageValue(item.itemid, os.stime() + 15*60)
-			player:addHealth(5000)
-			player:addMana(12000)
-			player:sendTextMessage(MESSAGE_EVENT_ADVANCE, "You feel better.")
-			player:getPosition():sendMagicEffect(CONST_ME_MAGIC_BLUE)
-			item:remove(1)
-			return true
-		else
-			return player:sendCancelMessage("You are exhausted.")
-		end
-	end
-		
+
 	local food = foods[item.itemid]
 	if not food then
 		return false
 	end
-	
+
 	if player:getStorageValue(Storage.secretLibrary.Darashia.eatenFood) ~= 1 then
 		if player:getPosition():isInRange(Position(32961, 32280, 10), Position(32964, 32286, 10)) then
 			player:say('Fames est optimus coquus', TALKTYPE_MONSTER_SAY)
 			player:setStorageValue(Storage.secretLibrary.Darashia.eatenFood, 1)
 		end
 	end
-	
+
 	--player:removeCondition(CONDITION_REGENERATION, CONDITIONID_DEFAULT)
 
 	local condition = player:getCondition(CONDITION_REGENERATION, CONDITIONID_DEFAULT)
@@ -156,7 +142,7 @@ function onUse(player, item, fromPosition, target, toPosition, isHotkey)
 		player:sendTextMessage(MESSAGE_STATUS_SMALL, 'You are full.')
 		return true
 	end
-	
+
 	player:feed(food[1] * 12)
 	player:say(food[2], TALKTYPE_MONSTER_SAY)
 	player:sendWaste(item:getId())

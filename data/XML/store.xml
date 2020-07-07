@@ -35,7 +35,6 @@
 
 	<!-- home -->
 	<home>
-		<offer name="Pair of Skelot Boots" />
 		<offer name="360 Days of VIP Time" />
 		<offer name="XP Boost +50%" />	
 		<offer name="Full Golden Outfit" />
@@ -493,7 +492,6 @@
 		<offer name="Character Sex Change" price="100" icon="sexchanger.png" description="Use this to change the sex of your character. Changes apply immediately. You don't need to logout for changes to apply." type="sexchange" disabled="yes"/>
 	</offers>
 	<offers name="Useful Things" description="Buy yourcharacter one or more of the helpful items offered here." icon="Category_Convenience.png" rookgaard="yes" state="none" parent="Extras" >
-		<offer name="Pair of Skelot Boots" itemtype="2358" count="1" price="200" icon="" type="item" state="new" />
 		<offer name="Charm Expansion" count="1" price="300" icon="Product_UsefulThings_UnlimitedBonusUsage.png" description="If you have purchased the Charm Expansion Offer for your character, you also get a 25% discount whenever you are removing a Charm from a creature. As a creature can only have one Charm assigned at once and a specific Charm cannot be assigned to more than one creature at a time, this purchase will save you quite some gold pieces in the long run." description12="<i>Assign as many of your unlocked Charms as you like and get a 25% discount whenever you are removing a Charm from a creature!</i><br/><br/>{character}<br/>{once}" type="charmexpansion" />
 		<offer name="Charm points (30x)" count="30" price="200" icon="Product_UsefulThings_UnlimitedBonusUsage.png" description12="This offer provides 30 charm points.<br /> <br />NOTE: THIS OFFER IS NOT CHARM EXPANSION" type="charmpoints" disabled="no"/>
 		<offer name="30x Instant Reward Access" count="50" price="100" icon="Product_UsefulThings_CollectionTokens.png" description="It has 30 charges and allows access to the Daily Rewards system wherever the character is." type="reward" />

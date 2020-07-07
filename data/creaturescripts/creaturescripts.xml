@@ -59,9 +59,6 @@
 	
 	<!-- Castle -->
 	<event type="think" name="Castle" script="events/castle/castle_events.lua" />
-	
-	<!-- Skelot Cake -->
-	<event type="healthchange" name="foodMonster" script="events/food_monster.lua" />
 
 	<!-- Battlefield (x4) -->
 	<event type="preparedeath" name="Battlefield_PrepareDeath_x4" script="events/battlefield/battlefield_x4_events.lua" />
