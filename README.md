@@ -12,27 +12,27 @@
 This branch is from a server coming from a donation made by a member of the OTServBR-Global project (who prefers to remain anonymous).
 If the creator or creators of any system that is here, want the credits and can prove to be the developer of them, get in touch with me on the discord (Eduardo Dantas #2451) and we'll talk about it.
 
-Has the following systems working (source)
-Protocol 10.00 and 12.30 (working 100%)
-Bestiary (working 100%)
-Charm (working 100%)
-Store (working 100%)
-Quickloot (working 100%)
-Cast system (working 100%)
-Wrap system (working 100%)
-Proxy (not tested)
-Custom spawns loading system (working 100%)
-And many others features
+## Has the following systems working (source)
+* Protocol 10.00 and 12.30 (working 100%)
+* Bestiary (working 100%)
+* Charm (working 100%)
+* Store (working 100%)
+* Quickloot (working 100%)
+* Cast system (working 100%)
+* Wrap system (working 100%)
+* Proxy (not tested)
+* Custom spawns loading system (working 100%)
+* And many others features
 
-Datapack:
-Several quests working, including dream courts, ferumbras, halls of hope, cults of tibia, forgotten knowledge and others
+## Datapack:
+* Several quests working, including dream courts, ferumbras, halls of hope, cults of tibia, forgotten knowledge and others
 
 ## Downloads
 * [Client 12.30](https://github.com/dudantas/tibia-client)
 Download in the Code (or clone) button and "Download Zip"
 * [Compatible Gesior](https://forums.otserv.com.br/index.php?/forums/topic/169428-premium-gesior-aac/)
 
-* For download the executables and dll files, goto for the [develop - OK](https://ci.appveyor.com/project/eduardodantas95/otservbr-global "Download nightly builds for Windows") ok button, slightly above, then go to configuration: release> artifacts> otservbr-global.zip
+* For download the executables and dll files, goto for the [develop - OK](https://ci.appveyor.com/project/eduardodantas95/otservbr-global "Download nightly builds for Windows") button, slightly above, then go to configuration: release> artifacts> otservbr-global.zip
 
 ## Docs/Help
 [![Documentation](https://codedocs.xyz/Costallat/otservbr-global.svg)](https://codedocs.xyz/Costallat/otservbr-global/)
