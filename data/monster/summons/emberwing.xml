@@ -20,15 +20,15 @@
 	</flags>
 	<attacks>
 		<attack name="melee" interval="2000" min="0" max="-200" /> <!-- melee -->
-		<attack name="holy" interval="2000" chance="18" target="1" range="5" radius="3" min="-200" max="-270" > <!-- holy bomb -->
+		<attack name="holy" interval="2000" chance="18" target="1" range="5" radius="3" min="-200" max="-270"> <!-- holy bomb -->
 			<attribute key="shootEffect" value="holy" />
 			<attribute key="areaEffect" value="holyarea" />
 		</attack>
-		<attack name="fire" interval="2000" chance="18" target="1" range="5" radius="3" min="-200" max="-270" > <!-- fire bomb -->
+		<attack name="fire" interval="2000" chance="18" target="1" range="5" radius="3" min="-200" max="-270"> <!-- fire bomb -->
 			<attribute key="shootEffect" value="fire" />
 			<attribute key="areaEffect" value="fireattack" />
 		</attack>
-		<attack name="fire" interval="2000" chance="18" target ="1" range="5" radius="5" min="-170" max="-230"> <!-- gfb -->
+		<attack name="fire" interval="2000" chance="18" target="1" range="5" radius="5" min="-170" max="-230"> <!-- gfb -->
 			<attribute key="shootEffect" value="fire" />
 			<attribute key="areaEffect" value="fireattack" />
 		</attack>

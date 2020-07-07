@@ -58,9 +58,9 @@
 	</summons>
 	<voices interval="5000" chance="10">
 		<voice sentence="Olho por Olho!" />
-		<voice sentence="Estou olhando para você!" />
-		<voice sentence="Deixe-me dar uma olhada em você!" />
-		<voice sentence="Você tem o olhar!" />
+		<voice sentence="Estou olhando para vocï¿½" />>
+		<voice sentence="Deixe-me dar uma olhada em vocï¿½" />>
+		<voice sentence="Vocï¿½ tem o olha" />/>
 	</voices>
 	<loot>
 		<item name="gold coin" countmax="82" chance="65000" />

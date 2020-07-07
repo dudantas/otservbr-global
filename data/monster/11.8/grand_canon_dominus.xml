@@ -29,10 +29,10 @@
 		<attack name="holy" interval="2000" chance="14" length="8" spread="0" min="-100" max="-1000">
 			<attribute key="areaEffect" value="energy" />
 		</attack>
-		<attack name="lifedrain" interval="1000" chance="15" range="5" radius="3"   min="-200" max="-700">
+		<attack name="lifedrain" interval="1000" chance="15" range="5" radius="3" min="-200" max="-700">
 			<attribute key="areaEffect" value="holyarea" />
 		</attack>
-		<attack name="lifedrain" interval="1000" chance="15" range="5" radius="3"   min="-200" max="-700">
+		<attack name="lifedrain" interval="1000" chance="15" range="5" radius="3" min="-200" max="-700">
 			<attribute key="areaEffect" value="smallclouds" />
 		</attack>
 	</attacks>
