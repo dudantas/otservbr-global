@@ -1,7 +1,7 @@
 # OTServ Brasil - Global Server
 
 ## Builds
-[![Build status](https://ci.appveyor.com/api/projects/status/github/opentibiabr/otservbr-global?branch=develop&passingText=develop%20-%20OK&svg=true)](https://ci.appveyor.com/project/eduardodantas95/otservbr-global "Download nightly builds for Windows")
+[![Build status](https://ci.appveyor.com/api/projects/status/github/opentibiabr/otservbr-global?branch=develop&passingText=develop%20-%20OK&svg=true)](https://ci.appveyor.com/project/dudantas/otservbr-global "Download nightly builds for Windows")
 [![Build Status](https://travis-ci.org/opentibiabr/OTServBR-Global.svg?branch=develop)](https://travis-ci.org/dudantas/otservbr-global "Linux Build Status - Shared Base 1 Branch")
 
 [![Build on MacOS](https://github.com/opentibiabr/otservbr-global/workflows/Build%20on%20MacOS/badge.svg)](https://github.com/opentibiabr/otservbr-global/actions?query=workflow%3A%22Build+on+MacOS%22)
@@ -32,7 +32,7 @@ If the creator or creators of any system that is here, want the credits and can 
 Download in the Code (or clone) button and "Download Zip"
 * [Compatible Gesior](https://forums.otserv.com.br/index.php?/forums/topic/169428-premium-gesior-aac/)
 
-* For download the executables and dll files, goto for the [develop - OK](https://ci.appveyor.com/project/eduardodantas95/otservbr-global "Download nightly builds for Windows") button, slightly above, then go to configuration: release> artifacts> otservbr-global.zip
+* For download the executables and dll files, goto for the [develop - OK](https://ci.appveyor.com/project/dudantas/otservbr-global "Download nightly builds for Windows") button, slightly above, then go to configuration: release> artifacts> otservbr-global.zip
 
 ## Docs/Help
 [![Documentation](https://codedocs.xyz/Costallat/otservbr-global.svg)](https://codedocs.xyz/Costallat/otservbr-global/)
