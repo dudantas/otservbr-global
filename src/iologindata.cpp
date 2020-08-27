@@ -337,10 +337,10 @@ bool IOLoginData::loadPlayer(Player* player, DBResult_ptr result)
     player->addBlessing(i, result->getNumber<uint16_t>(ss.str()));
   }
 
-  unsigned long attrSize;
-  const char* attr = result->getStream("conditions", attrSize);
+  unsigned long conditionsSize;
+  const char* conditions = result->getStream("conditions", conditionsSize);
   PropStream propStream;
-  propStream.init(attr, attrSize);
+  propStream.init(conditions, conditionsSize);
 
   Condition* condition = Condition::createCondition(propStream);
   while (condition) {
@@ -944,20 +944,6 @@ bool IOLoginData::savePlayer(Player* player)
   if (player->lastIP != 0) {
     query << "`lastip` = " << player->lastIP << ',';
   }
-
-  //serialize conditions
-  PropWriteStream propWriteStream;
-  for (Condition* condition : player->conditions) {
-    if (condition->isPersistent()) {
-      condition->serialize(propWriteStream);
-      propWriteStream.write<uint8_t>(CONDITIONATTR_END);
-    }
-  }
-
-  size_t attributesSize;
-  const char* attributes = propWriteStream.getStream(attributesSize);
-
-  query << "`conditions` = " << db.escapeBlob(attributes, attributesSize) << ',';
 
   if (g_game.getWorldType() != WORLD_TYPE_PVP_ENFORCED) {
     int64_t skullTime = 0;

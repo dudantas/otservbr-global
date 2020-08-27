@@ -65,7 +65,7 @@ class Monster final : public Creature
 				setCombatID();
 			}
 		}
-		void setCombatID() override {
+		void setCombatID() {
 			if (combatid == 0) {
 				combatid = id;
 			}
@@ -209,7 +209,7 @@ class Monster final : public Creature
 			raid = b;
 		}
 
-		void setRemoveTime(int32_t decay) override {
+		void setRemoveTime(int32_t decay) {
 			removeTime = decay;
 		}
 

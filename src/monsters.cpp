@@ -828,7 +828,7 @@ MonsterType* Monsters::loadMonster(const std::string& file, const std::string& m
 	}
 
 	if ((attr = monsterNode.attribute("speed"))) {
-		mType->info.baseSpeed = pugi::cast<int32_t>(attr.value()) * g_config.getDouble(ConfigManager::RATE_MONSTER_SPEED);
+		mType->info.baseSpeed = pugi::cast<int32_t>(attr.value());
 	}
 
 	if ((attr = monsterNode.attribute("manacost"))) {

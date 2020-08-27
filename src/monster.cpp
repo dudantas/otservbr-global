@@ -626,11 +626,6 @@ bool Monster::isTarget(const Creature* creature) const
 		return false;
 	}
 
-	Creature* thisCreature = const_cast<Creature*>(creature);
-	if (thisCreature->getProtectionCombatStatus() == COMBAT_STATUS_IN_CHECK) {
-		return false;
-	}
-
 	if (creature->getPosition().z != getPosition().z) {
 		return false;
 	}
@@ -639,12 +634,7 @@ bool Monster::isTarget(const Creature* creature) const
 
 bool Monster::selectTarget(Creature* creature)
 {
-	if (!isTarget(creature) || creature->isDead()) {
-		return false;
-	}
-
-	Creature* thisCreature = const_cast<Creature*>(creature);
-	if (thisCreature->getProtectionCombatStatus() == COMBAT_STATUS_IN_CHECK) {
+	if (!isTarget(creature)) {
 		return false;
 	}
 
@@ -744,7 +734,7 @@ void Monster::onThink(uint32_t interval)
 		}
 	}
 
-	if (!mType->canSpawn(pos)) {
+	if (!mType->canSpawn(position)) {
 		g_game.removeCreature(this);
 	}
 
@@ -756,7 +746,7 @@ void Monster::onThink(uint32_t interval)
 		}
 	}
 
-	if (!isInSpawnRange(pos)) {
+	if (!isInSpawnRange(position)) {
 		g_game.internalTeleport(this, masterPos);
 	} else {
 		updateIdleStatus();
@@ -857,10 +847,6 @@ void Monster::doAttacking(uint32_t interval)
 
 bool Monster::canUseAttack(const Position& pos, const Creature* target) const
 {
-	if (target->isDead()) {
-		return false;
-	}
-
 	if (isHostile()) {
 		const Position& targetPos = target->getPosition();
 		uint32_t distance = std::max<uint32_t>(Position::getDistanceX(pos, targetPos), Position::getDistanceY(pos, targetPos));

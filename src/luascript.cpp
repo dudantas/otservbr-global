@@ -4931,7 +4931,6 @@ int LuaScriptInterface::luaGameCreateMonster(lua_State* L)
 	const Position& position = getPosition(L, 2);
 	bool extended = getBoolean(L, 3, false);
 	bool force = getBoolean(L, 4, false);
-	Creature* master = getCreature(L, 5);
 	if (g_game.placeCreature(monster, position, extended, force)) {
 		if (!g_events->eventMonsterOnSpawn(monster, position, false, true)) {
 			delete monster;
@@ -18346,6 +18345,54 @@ int LuaScriptInterface::luaImbuementGetCombatType(lua_State* L)
 	Imbuement* imbuement = getUserdata<Imbuement>(L, 1);
 	if (imbuement) {
 		lua_pushnumber(L, imbuement->combatType);
+	} else {
+		lua_pushnil(L);
+	}
+	return 1;
+}
+
+int LuaScriptInterface::luaMountGetName(lua_State* L)
+{
+	// mount:getName()
+	Mount* mount = getUserdata<Mount>(L, 1);
+	if (mount) {
+		pushString(L, mount->name);
+	} else {
+		lua_pushnil(L);
+	}
+	return 1;
+}
+
+int LuaScriptInterface::luaMountGetId(lua_State* L)
+{
+	// mount:getId()
+	Mount* mount = getUserdata<Mount>(L, 1);
+	if (mount) {
+		lua_pushnumber(L, mount->id);
+	} else {
+		lua_pushnil(L);
+	}
+	return 1;
+}
+
+int LuaScriptInterface::luaMountGetClientId(lua_State* L)
+{
+	// mount:getClientId()
+	Mount* mount = getUserdata<Mount>(L, 1);
+	if (mount) {
+		lua_pushnumber(L, mount->clientId);
+	} else {
+		lua_pushnil(L);
+	}
+	return 1;
+}
+
+int LuaScriptInterface::luaMountGetSpeed(lua_State* L)
+{
+	// mount:getSpeed()
+	Mount* mount = getUserdata<Mount>(L, 1);
+	if (mount) {
+		lua_pushnumber(L, mount->speed);
 	} else {
 		lua_pushnil(L);
 	}

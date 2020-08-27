@@ -1758,6 +1758,7 @@ class Player final : public Creature, public Cylinder
 		bool quickLootFallbackToMainContainer = false;
 		bool logged = false;
 		bool scheduledSaleUpdate = false;
+		bool charmExpansion = false;
 
 		static uint32_t playerAutoID;
 
