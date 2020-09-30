@@ -40,6 +40,7 @@
 #include "modules.h"
 #include "spells.h"
 #include "imbuements.h"
+#include "iostash.h"
 
 extern Game g_game;
 extern Bestiaries g_bestiaries;
@@ -481,6 +482,7 @@ void ProtocolGame::parsePacket(NetworkMessage& msg)
 		case 0x14: g_dispatcher.addTask(createTask(std::bind(&ProtocolGame::logout, getThis(), true, false))); break;
 		case 0x1D: addGameTask(&Game::playerReceivePingBack, player->getID()); break;
 		case 0x1E: addGameTask(&Game::playerReceivePing, player->getID()); break;
+		case 0x28: parseStashWithdraw(msg); break;
 		case 0x32: parseExtendedOpcode(msg); break; //otclient extended opcode
 		case 0x64: parseAutoWalk(msg); break;
 		case 0x65: addGameTask(&Game::playerMove, player->getID(), DIRECTION_NORTH); break;
@@ -497,6 +499,7 @@ void ProtocolGame::parsePacket(NetworkMessage& msg)
 		case 0x71: addGameTaskTimed(DISPATCHER_TASK_EXPIRATION, &Game::playerTurn, player->getID(), DIRECTION_SOUTH); break;
 		case 0x72: addGameTaskTimed(DISPATCHER_TASK_EXPIRATION, &Game::playerTurn, player->getID(), DIRECTION_WEST); break;
 		case 0x73: parseTeleport(msg); break;
+		case 0x77: parseHotkeyEquip(msg); break;
 		case 0x78: parseThrow(msg); break;
 		case 0x79: parseLookInShop(msg); break;
 		case 0x7A: parsePlayerPurchase(msg); break;
@@ -580,7 +583,6 @@ void ProtocolGame::parsePacket(NetworkMessage& msg)
 //		case 0xFD: parseStoreOpenTransactionHistory(msg); break;
 //		case 0xFE: parseStoreRequestTransactionHistory(msg); break;
 
-		//case 0x77 Equip Hotkey.
 		//case 0xDF, 0xE0, 0xE1, 0xFB, 0xFC, 0xFD, 0xFE Premium Shop.
 		//case 0xE2 Request bestiary monster.
 
@@ -593,6 +595,16 @@ void ProtocolGame::parsePacket(NetworkMessage& msg)
 			disconnect();
 		}
 	*/
+}
+
+void ProtocolGame::parseHotkeyEquip(NetworkMessage& msg)
+{
+	if (!player) {
+		return;
+	}
+	uint16_t spriteid = msg.get<uint16_t>();
+  addGameTask(&Game::onPressHotkeyEquip, player, spriteid);
+	return;	
 }
 
 void ProtocolGame::GetTileDescription(const Tile* tile, NetworkMessage& msg)
@@ -2163,7 +2175,25 @@ void ProtocolGame::sendMarketEnter(uint32_t depotId)
 			depotItems[itemType.wareId] += Item::countByType(item, -1);
 		}
 	} while (!containerList.empty());
+	StashItemList stashToSend = IOStash::getStoredItems(player->guid);
+	uint16_t size = 0;
+		for (auto item : stashToSend)
+		{
+			size += ceil(item.second);
+		}
 
+		do {
+		for (auto item : stashToSend) {
+
+			const ItemType& itemType = Item::items[Item::items.getItemIdByClientId(item.first).id];
+			if (itemType.wareId == 0) {
+				continue;
+			}
+
+			size = size - item.second;
+			depotItems[itemType.wareId] +=  item.second;
+		}
+	} while (size > 0);
 	uint16_t itemsToSend = std::min<size_t>(depotItems.size(), std::numeric_limits<uint16_t>::max());
 	msg.add<uint16_t>(itemsToSend);
 
@@ -2807,6 +2837,47 @@ void ProtocolGame::sendDistanceShoot(const Position& from, const Position& to, u
 	msg.addByte(static_cast<uint8_t>(static_cast<int8_t>(static_cast<int32_t>(to.x) - static_cast<int32_t>(from.x))));
 	msg.addByte(static_cast<uint8_t>(static_cast<int8_t>(static_cast<int32_t>(to.y) - static_cast<int32_t>(from.y))));
 	msg.addByte(MAGIC_EFFECTS_END_LOOP);
+	writeToOutputBuffer(msg);
+}
+
+void ProtocolGame::sendRestingStatus(uint8_t protection)
+{
+	if (!player) {
+		return;
+	}
+
+	NetworkMessage msg;
+	msg.addByte(0xA9);
+	msg.addByte(protection); // 1 / 0
+	int32_t PlayerdailyStreak = 0;
+	player->getStorageValue(STORAGEVALUE_DAILYREWARD, PlayerdailyStreak);	
+	msg.addByte(PlayerdailyStreak < 2 ? 0 : 1);
+	if (PlayerdailyStreak < 2)  {
+		msg.addString("Resting Area (no active bonus)");
+	} else {
+		std::ostringstream ss;
+		ss << "Active Resting Area Bonuses: ";
+	if (PlayerdailyStreak < DAILY_REWARD_DOUBLE_HP_REGENERATION) {
+		ss << "\nHit Points Regeneration";
+	} else {
+		ss << "\nDouble Hit Points Regeneration";
+	}
+	if (PlayerdailyStreak >= DAILY_REWARD_MP_REGENERATION) {
+		if (PlayerdailyStreak < DAILY_REWARD_DOUBLE_MP_REGENERATION) {
+		ss << ",\nMana Points Regeneration";
+		} else {
+		ss << ",\nDouble Mana Points Regeneration";
+		}
+	}
+	if (PlayerdailyStreak >= DAILY_REWARD_STAMINA_REGENERATION) {
+		ss << ",\nStamina Points Regeneration";
+	}
+	if (PlayerdailyStreak >= DAILY_REWARD_SOUL_REGENERATION) {
+		ss << ",\nSoul Points Regeneration";
+	}
+		ss << ".";
+		msg.addString(ss.str());
+	}
 	writeToOutputBuffer(msg);
 }
 
@@ -3696,8 +3767,13 @@ void ProtocolGame::AddCreature(NetworkMessage& msg, const Creature* creature, bo
 	}
 
 	if (creatureType == CREATURETYPE_PLAYER) {
-		msg.addByte(0);
- 	}
+		const Player* otherCreature = creature->getPlayer();
+		if (otherCreature) {
+			msg.addByte(otherCreature->getVocation()->getClientId());
+		} else {
+			msg.addByte(0);
+		}
+	}
 
 	msg.addByte(creature->getSpeechBubble());
 	msg.addByte(0xFF); // MARK_UNMARKED
@@ -3898,6 +3974,15 @@ void ProtocolGame::AddWorldLight(NetworkMessage& msg, LightInfo lightInfo)
 	msg.addByte(0x82);
 	msg.addByte((player->isAccessPlayer() ? 0xFF : lightInfo.level));
 	msg.addByte(lightInfo.color);
+}
+
+void ProtocolGame::sendSpecialContainersAvailable(bool supplyStashAvailable)
+{
+	NetworkMessage msg;
+	msg.addByte(0x2A);
+	msg.addByte(supplyStashAvailable ? 0x01 : 0x00);
+	msg.addByte(0x00); // 0x00 if player can use 'show in market' option. TO DO
+	writeToOutputBuffer(msg);
 }
 
 void ProtocolGame::AddCreatureLight(NetworkMessage& msg, const Creature* creature)
@@ -4532,6 +4617,66 @@ void ProtocolGame::reloadCreature(const Creature* creature)
 	}
 
 	writeToOutputBuffer(msg);
+}
+
+void ProtocolGame::sendOpenStash()
+{
+	NetworkMessage msg;
+	msg.addByte(0x29);
+	AddPlayerStowedItems(msg);
+	writeToOutputBuffer(msg);
+}
+
+void ProtocolGame::AddPlayerStowedItems(NetworkMessage& msg)
+{
+	StashItemList list = IOStash::getStoredItems(player->guid);
+
+	msg.add<uint16_t>(list.size());
+
+	for (auto item : list)
+	{
+		msg.add<uint16_t>(item.first);
+		msg.add<uint32_t>(item.second);
+	}
+	msg.add<uint16_t>(g_config.getNumber(ConfigManager::STASH_ITEMS) - IOStash::getStashSize(list));
+}
+
+void ProtocolGame::parseStashWithdraw(NetworkMessage& msg)
+{
+	Supply_Stash_Actions_t action = static_cast<Supply_Stash_Actions_t>(msg.getByte());
+	switch (action) {
+		case SUPPLY_STASH_ACTION_STOW_ITEM: {
+			Position pos = msg.getPosition();
+			uint16_t spriteId = msg.get<uint16_t>();
+			uint8_t stackpos = msg.getByte();
+			uint32_t count = static_cast<uint32_t>(msg.getByte());
+			g_game.playerStowItem(player, pos, spriteId, stackpos, count);
+			break;
+		}
+		case SUPPLY_STASH_ACTION_STOW_CONTAINER: {	
+			Position pos = msg.getPosition();
+			uint16_t spriteId = msg.get<uint16_t>();
+			uint8_t stackpos = msg.getByte();
+			g_game.playerStowContainer(player, pos, spriteId, stackpos);
+			break;
+		}
+		case SUPPLY_STASH_ACTION_STOW_STACK: {
+			Position pos = msg.getPosition();
+			uint16_t spriteId = msg.get<uint16_t>();
+			uint8_t stackpos = msg.getByte();
+			g_game.playerStowAllItems(player, pos, spriteId, stackpos);
+			break;
+		}
+		case SUPPLY_STASH_ACTION_WITHDRAW: {
+
+			uint16_t spriteId = msg.get<uint16_t>();
+			uint32_t count = msg.get<uint32_t>();
+			uint8_t stackpos = msg.getByte(); // TODO: wtf is this variable
+			g_game.playerStashWithdraw(player, spriteId, count, stackpos);
+			sendOpenStash();
+			break;
+		}
+	}
 }
 
 void ProtocolGame::sendLockerItems(std::map<uint16_t, uint16_t> itemMap, uint16_t count)

@@ -33,6 +33,7 @@
 #include "movement.h"
 #include "scheduler.h"
 #include "weapons.h"
+#include "iostash.h"
 
 extern ConfigManager g_config;
 extern Game g_game;
@@ -421,11 +422,14 @@ uint16_t Player::getClientIcons() const
 
 	if (tile->hasFlag(TILESTATE_PROTECTIONZONE)) {
 		icons |= ICON_PIGEON;
+		client->sendRestingStatus(1);
 
 		// Don't show ICON_SWORDS if player is in protection zone.
 		if (hasBitSet(ICON_SWORDS, icons)) {
 			icons &= ~ICON_SWORDS;
 		}
+	} else {
+		client->sendRestingStatus(0);
 	}
 
 	// Game client debugs with 10 or more icons
@@ -958,6 +962,7 @@ DepotLocker* Player::getDepotLocker(uint32_t depotId)
 	depotLocker->setDepotId(depotId);
 	depotLocker->internalAddThing(Item::CreateItem(ITEM_MARKET));
 	depotLocker->internalAddThing(inbox);
+	depotLocker->internalAddThing(Item::CreateItem(ITEM_SUPPLY_STASH));
 	Container* depotChest = Item::CreateItemAsContainer(ITEM_DEPOT, g_config.getNumber(ConfigManager::DEPOT_BOXES));
 	for (uint8_t i = g_config.getNumber(ConfigManager::DEPOT_BOXES); i > 0; i--) {
 		DepotChest* depotBox = getDepotChest(i, true);
@@ -1283,7 +1288,7 @@ void Player::onCreatureAppear(Creature* creature, bool isLogin)
 			}
 		}
 
-    	g_game.checkPlayersRecord();
+		g_game.checkPlayersRecord();
 		IOLoginData::updateOnlineStatus(guid, true);
 	}
 }
@@ -1639,15 +1644,58 @@ void Player::setNextActionTask(SchedulerTask* task)
 		actionTaskEvent = 0;
 	}
 
+	if (!inEventMovePush)
+		cancelPush();
+
 	if (task) {
 		actionTaskEvent = g_scheduler.addEvent(task);
-		resetIdleTime();
+	}
+}
+
+void Player::setNextActionPushTask(SchedulerTask* task)
+{
+	if (actionTaskEventPush != 0) {
+		g_scheduler.stopEvent(actionTaskEventPush);
+		actionTaskEventPush = 0;
+	}
+
+	if (task) {
+		actionTaskEventPush = g_scheduler.addEvent(task);
+	}
+}
+
+void Player::setNextPotionActionTask(SchedulerTask* task)
+{
+	if (actionPotionTaskEvent != 0) {
+		g_scheduler.stopEvent(actionPotionTaskEvent);
+		actionPotionTaskEvent = 0;
+	}
+
+	cancelPush();
+
+	if (task) {
+		actionPotionTaskEvent = g_scheduler.addEvent(task);
+		//resetIdleTime();
 	}
 }
 
 uint32_t Player::getNextActionTime() const
 {
 	return std::max<int64_t>(SCHEDULER_MINTICKS, nextAction - OTSYS_TIME());
+}
+
+uint32_t Player::getNextPotionActionTime() const
+{
+	return std::max<int64_t>(SCHEDULER_MINTICKS, nextPotionAction - OTSYS_TIME());
+}
+
+void Player::cancelPush()
+{
+	if (actionTaskEventPush !=  0) {
+		g_scheduler.stopEvent(actionTaskEventPush);
+		actionTaskEventPush = 0;
+		inEventMovePush = false;
+	}
 }
 
 void Player::onThink(uint32_t interval)
@@ -5059,130 +5107,108 @@ void Player::onDeEquipImbueItem(Imbuement* imbuement)
 	return;
 }
 
-// Bestiary
-void Player::addBestiaryKill(uint16_t racedid, int32_t value, bool gained)
-{
-	if (value != -1) {
-		auto it = bestiaryKills.find(racedid);
-		if (it == bestiaryKills.end()) {
-			BestiaryPoints bestiaryPoints;
-			bestiaryPoints.kills = value;
-			bestiaryPoints.gained = gained;
-			bestiaryKills[racedid] = bestiaryPoints;
-		} else {
-			BestiaryPoints& bestiaryPoints = it->second;
-			bestiaryPoints.kills = bestiaryPoints.kills + value;
-			if (gained) {
-				bestiaryPoints.gained = gained;
-			}
+bool Player::addItemFromStash(uint16_t itemId, uint32_t itemCount) {
+	uint32_t stackCount = 100u;
+
+	while (itemCount > 0) {
+		auto addValue = itemCount > stackCount ? stackCount : itemCount;
+		itemCount -= addValue;
+		Item* newItem = Item::CreateItem(itemId, addValue);
+
+		if (g_game.internalQuickLootItem(this, newItem, OBJECTCATEGORY_STASHRETRIEVE) != RETURNVALUE_NOERROR) {
+			g_game.internalPlayerAddItem(this, newItem, true);
 		}
-
-	} else {
-		bestiaryKills.erase(racedid);
 	}
-}
-
-bool Player::getBestiaryKill(uint16_t racedid, int32_t value) const
-{
-	auto it = bestiaryKills.find(racedid);
-	if (it == bestiaryKills.end()) {
-		value = -1;
-		return false;
-	}
-
-	const BestiaryPoints& bestiaryPoints = it->second;
-	value = bestiaryPoints.kills;
 	return true;
 }
 
-int32_t Player::getBestiaryKills(uint16_t racedid)
-{
-	auto it = bestiaryKills.find(racedid);
-	if (it != bestiaryKills.end()) {
-		BestiaryPoints& bestiaryPoints = it->second;
-		return bestiaryPoints.kills;
-	}
-
-	return 0;
-}
-
-bool Player::gainedCharmPoints(uint16_t racedid)
-{
-	auto it = bestiaryKills.find(racedid);
-	if (it != bestiaryKills.end()) {
-		BestiaryPoints& bestiaryPoints = it->second;
-		return bestiaryPoints.gained;
-	}
-
-	return false;
-}
-
-uint16_t Player::getCurrentCreature(uint8_t charmid)
-{
-	for (const auto& it : charmMap) {
-		if (it.first == charmid) {
-			return it.second;
-		}
-	}
-
-	return 0;
-}
-
-void Player::addCharm(uint8_t charmid, uint16_t raceid)
-{
-	charmMap[charmid] = raceid;
-}
-
-void Player::removeCharm(uint8_t charmid, bool remove)
-{
-	if (remove) { // eraser
-		charmMap.erase(charmid);
-	} else {
-		charmMap[charmid] = 0;
-	}
-}
-
-int8_t Player::getMonsterCharm(uint16_t racedid)
-{
-	for (const auto& it : charmMap) {
-		if (it.second == racedid) {
-			return it.first;
-		}
-	}
-
-	return -1;
-}
-
-void Player::manageMonsterTracker(uint16_t raceid)
-{
-	int count = 0;
-	for (const auto& race : bestiaryTracker) {
-		if (race == raceid) {
-			bestiaryTracker.erase(bestiaryTracker.begin() + count);
-			sendBestiaryTracker();
-			return;
-		}
-		count++;
-	}
-
-	if (bestiaryTracker.size() >= 250) {
+void Player::stowContainer(Item* item, uint32_t count,  bool stowalltype/* = false*/) {
+	if (item == nullptr || !isItemStorable(item)) {
+		sendCancelMessage("This item cannot be stowed here.");
 		return;
 	}
 
-	bestiaryTracker.emplace_back(raceid);
+	ItemDeque itemList = ItemDeque();
+	std::map<uint16_t, std::pair<bool, uint32_t>> itemDict;	
+	uint32_t totalStowed = 0;
+	std::ostringstream retString;
+  const ItemType& itemType = Item::items[item->getID()];
 
-	sendBestiaryTracker();
+	if (itemType.isContainer()) {
+		itemList = getAllStorableItemsInContainer(item);
+	}	else {
+		itemList.push_back(item);
+	}
+
+	for (Item* i : itemList) {
+    auto sameItemCountSum = itemType.isContainer() ? i->getItemCount() : count;
+
+		if (itemDict.count(i->getClientID()) == 1) {
+			sameItemCountSum += itemDict[i->getClientID()].second;
+		}
+
+		itemDict[i->getClientID()] = std::pair<bool, uint32_t>(false, sameItemCountSum);
+	}
+
+		  if (itemList.size() == 0) {
+		  sendCancelMessage("There is nothing to stash in this container");
+			return;
+		  }
+
+	itemDict = IOStash::stashContainer(this->guid, itemDict, g_config.getNumber(ConfigManager::STASH_ITEMS));
+
+  if (itemDict.size() == 0) {
+    if(itemList.size() == 0)
+      sendCancelMessage("There is nothing to stash in this container");
+    else if (itemList.size() == 1 && !itemType.isContainer())
+      sendCancelMessage("You don't have capacity in the Supply Stash to store this item");
+    else
+      sendCancelMessage("You don't have capacity in the Supply Stash to store this container");
+    return;
+  }
+
+  if (itemType.isContainer()) {
+    for (auto itemToRemove : itemList) {
+      g_game.internalRemoveItem(itemToRemove, itemToRemove->getItemCount());
+      totalStowed += itemToRemove->getItemCount();
+    }
+  } else if (stowalltype) {
+	uint16_t allstowitems = this->getItemTypeCount(item->getID(), -1);
+	this->removeItemOfType(item->getID(), allstowitems, -1, false);
+    totalStowed += allstowitems;
+  } else {
+    g_game.internalRemoveItem(item, count);
+    totalStowed += count;
+  }
+
+	retString << "Stowed " << totalStowed << " object" << (totalStowed > 1 ? "s." : ".");
+	sendCancelMessage(retString.str());
 }
 
-bool Player::monsterInTracker(uint16_t raceid)
-{
-	for (const auto& race : bestiaryTracker) {
-		if (race == raceid) {
-			return true;
+
+bool Player::isItemStorable(Item* item) {
+	auto isContainerAndHasSomethingInside = item->getContainer() != NULL && item->getContainer()->getItemList().size() > 0;
+	return (item->isStowable() || isContainerAndHasSomethingInside);
+}
+
+ItemDeque Player::getAllStorableItemsInContainer(Item* container) {
+
+	auto allITems = container->getContainer()->getItemList();
+	ItemDeque toReturnList = ItemDeque();
+
+	for (auto item : allITems) {
+		if (item->getContainer() != NULL) {
+			auto subContainer = getAllStorableItemsInContainer(item);
+			for (auto subContItem : subContainer) {
+				toReturnList.push_back(subContItem);
+			}
+		}
+		else if (isItemStorable(item)) {
+			toReturnList.push_back(item);
 		}
 	}
 
-	return false;
+	return toReturnList;
 }
 
 /*******************************************************************************

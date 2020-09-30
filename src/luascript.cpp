@@ -43,6 +43,7 @@
 #include "script.h"
 #include "weapons.h"
 #include "imbuements.h"
+#include "iostash.h"
 
 extern Bestiaries g_bestiaries;
 extern Chat* g_chat;
@@ -2522,6 +2523,10 @@ void LuaScriptInterface::registerFunctions()
 	registerMethod("Player", "getGroup", LuaScriptInterface::luaPlayerGetGroup);
 	registerMethod("Player", "setGroup", LuaScriptInterface::luaPlayerSetGroup);
 
+	registerMethod("Player", "setSpecialContainersAvailable", LuaScriptInterface::luaPlayerSetSpecialContainersAvailable);
+	registerMethod("Player", "getStashCount", LuaScriptInterface::luaPlayerGetStashCounter);
+	registerMethod("Player", "OpenStash", LuaScriptInterface::luaPlayerOpenStash);
+
 	registerMethod("Player", "getStamina", LuaScriptInterface::luaPlayerGetStamina);
 	registerMethod("Player", "setStamina", LuaScriptInterface::luaPlayerSetStamina);
 
@@ -3020,6 +3025,15 @@ void LuaScriptInterface::registerFunctions()
                   LuaScriptInterface::luaMonsterTypeCanWalkOnFire);
     registerMethod("MonsterType", "canWalkOnPoison",
                   LuaScriptInterface::luaMonsterTypeCanWalkOnPoison);
+
+    registerMethod("MonsterType", "strategiesTargetNearest",
+                  LuaScriptInterface::luaMonsterTypeStrategiesTargetNearest);
+    registerMethod("MonsterType", "strategiesTargetHealth",
+                  LuaScriptInterface::luaMonsterTypeStrategiesTargetHealth);
+    registerMethod("MonsterType", "strategiesTargetDamage",
+                  LuaScriptInterface::luaMonsterTypeStrategiesTargetDamage);
+    registerMethod("MonsterType", "strategiesTargetRandom",
+                  LuaScriptInterface::luaMonsterTypeStrategiesTargetRandom);
 
 	// Loot
 	registerClass("Loot", "", LuaScriptInterface::luaCreateLoot);
@@ -8925,6 +8939,20 @@ int LuaScriptInterface::luaPlayerGetDepotLocker(lua_State* L)
 	return 1;
 }
 
+int LuaScriptInterface::luaPlayerGetStashCounter(lua_State* L)
+{
+	// player:getStashCount()
+	const Player* player = getUserdata<Player>(L, 1);
+	if (player) {
+		StashItemList list = IOStash::getStoredItems(player->guid);
+		uint32_t sizeStash = IOStash::getStashSize(list);
+		lua_pushnumber(L, sizeStash);
+	} else {
+		lua_pushnil(L);
+	}
+	return 1;
+}
+
 int LuaScriptInterface::luaPlayerGetDepotChest(lua_State* L)
 {
 	// player:getDepotChest(depotId[, autoCreate = false])
@@ -9342,6 +9370,17 @@ int LuaScriptInterface::luaPlayerSetOfflineTrainingSkill(lua_State* L)
 	return 1;
 }
 
+int LuaScriptInterface::luaPlayerOpenStash(lua_State* L)
+{	
+	// player:OpenStash()
+	Player* player = getUserdata<Player>(L, 1);
+	if (!player) {
+		return 1;
+	}
+	player->sendOpenStash();
+	return 1;
+}
+
 int LuaScriptInterface::luaPlayerGetItemCount(lua_State* L)
 {
 	// player:getItemCount(itemId[, subType = -1])
@@ -9618,6 +9657,21 @@ int LuaScriptInterface::luaPlayerSetGroup(lua_State* L)
 	Player* player = getUserdata<Player>(L, 1);
 	if (player) {
 		player->setGroup(group);
+		pushBoolean(L, true);
+	} else {
+		lua_pushnil(L);
+	}
+	return 1;
+}
+
+int LuaScriptInterface::luaPlayerSetSpecialContainersAvailable(lua_State* L)
+{
+	// player:setSpecialContainersAvailable(supplyStashAvailable)
+	bool supplyStashAvailable = getBoolean(L, 2);
+	Player* player = getUserdata<Player>(L, 1);
+	if (player) {
+		player->setSupplyStashAvailable(supplyStashAvailable);
+		player->sendSpecialContainersAvailable(supplyStashAvailable);
 		pushBoolean(L, true);
 	} else {
 		lua_pushnil(L);
@@ -15312,7 +15366,7 @@ int LuaScriptInterface::luaMonsterTypeCanWalkOnEnergy(lua_State* L) {
         if (lua_gettop(L) == 1) {
             pushBoolean(L, monsterType->info.canWalkOnEnergy);
         } else {
-            monsterType->info.canWalkOnEnergy = getBoolean(L, 2);
+            monsterType->info.canWalkOnEnergy = getBoolean(L, 2, true);
             pushBoolean(L, true);
         }
     } else {
@@ -15328,7 +15382,7 @@ int LuaScriptInterface::luaMonsterTypeCanWalkOnFire(lua_State* L) {
         if (lua_gettop(L) == 1) {
             pushBoolean(L, monsterType->info.canWalkOnFire);
         } else {
-            monsterType->info.canWalkOnFire = getBoolean(L, 2);
+            monsterType->info.canWalkOnFire = getBoolean(L, 2, true);
             pushBoolean(L, true);
         }
     } else {
@@ -15344,13 +15398,81 @@ int LuaScriptInterface::luaMonsterTypeCanWalkOnPoison(lua_State* L) {
         if (lua_gettop(L) == 1) {
             pushBoolean(L, monsterType->info.canWalkOnPoison);
         } else {
-            monsterType->info.canWalkOnPoison = getBoolean(L, 2);
+            monsterType->info.canWalkOnPoison = getBoolean(L, 2, true);
             pushBoolean(L, true);
         }
     } else {
         lua_pushnil(L);
     }
     return 1;
+}
+
+int LuaScriptInterface::luaMonsterTypeStrategiesTargetNearest(lua_State* L)
+{
+	// monsterType:strategiesTargetNearest()
+	MonsterType* monsterType = getUserdata<MonsterType>(L, 1);
+	if (monsterType) {
+		if (lua_gettop(L) == 1) {
+			lua_pushnumber(L, monsterType->info.changeTargetChance);
+		} else {
+			monsterType->info.changeTargetChance = getNumber<int32_t>(L, 2);
+			pushBoolean(L, true);
+		}
+	} else {
+		lua_pushnil(L);
+	}
+	return 1;
+}
+
+int LuaScriptInterface::luaMonsterTypeStrategiesTargetHealth(lua_State* L)
+{
+	// monsterType:strategiesTargetHealth()
+	MonsterType* monsterType = getUserdata<MonsterType>(L, 1);
+	if (monsterType) {
+		if (lua_gettop(L) == 1) {
+			lua_pushnumber(L, monsterType->info.changeTargetChance);
+		} else {
+			monsterType->info.changeTargetChance = getNumber<int32_t>(L, 2);
+			pushBoolean(L, true);
+		}
+	} else {
+		lua_pushnil(L);
+	}
+	return 1;
+}
+
+int LuaScriptInterface::luaMonsterTypeStrategiesTargetDamage(lua_State* L)
+{
+	// monsterType:strategiesTargetDamage()
+	MonsterType* monsterType = getUserdata<MonsterType>(L, 1);
+	if (monsterType) {
+		if (lua_gettop(L) == 1) {
+			lua_pushnumber(L, monsterType->info.changeTargetChance);
+		} else {
+			monsterType->info.changeTargetChance = getNumber<int32_t>(L, 2);
+			pushBoolean(L, true);
+		}
+	} else {
+		lua_pushnil(L);
+	}
+	return 1;
+}
+
+int LuaScriptInterface::luaMonsterTypeStrategiesTargetRandom(lua_State* L)
+{
+	// monsterType:strategiesTargetRandom()
+	MonsterType* monsterType = getUserdata<MonsterType>(L, 1);
+	if (monsterType) {
+		if (lua_gettop(L) == 1) {
+			lua_pushnumber(L, monsterType->info.changeTargetChance);
+		} else {
+			monsterType->info.changeTargetChance = getNumber<int32_t>(L, 2);
+			pushBoolean(L, true);
+		}
+	} else {
+		lua_pushnil(L);
+	}
+	return 1;
 }
 
 // Loot
@@ -17166,10 +17288,10 @@ int LuaScriptInterface::luaMoveEventType(lua_State* L)
 			moveevent->setEventType(MOVE_EVENT_DEEQUIP);
 			moveevent->equipFunction = moveevent->DeEquipItem;
 		} else if (tmpStr == "additem") {
-			moveevent->setEventType(MOVE_EVENT_ADD_ITEM);
+			moveevent->setEventType(MOVE_EVENT_ADD_ITEM_ITEMTILE);
 			moveevent->moveFunction = moveevent->AddItemField;
 		} else if (tmpStr == "removeitem") {
-			moveevent->setEventType(MOVE_EVENT_REMOVE_ITEM);
+			moveevent->setEventType(MOVE_EVENT_REMOVE_ITEM_ITEMTILE);
 			moveevent->moveFunction = moveevent->RemoveItemField;
 		} else {
 			std::cout << "Error: [MoveEvent::configureMoveEvent] No valid event name " << typeName << std::endl;

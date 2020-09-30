@@ -226,6 +226,7 @@ class ProtocolGame final : public Protocol
 
 		void sendDistanceShoot(const Position& from, const Position& to, uint8_t type);
 		void sendMagicEffect(const Position& pos, uint8_t type);
+		void sendRestingStatus(uint8_t protection);		
 		void sendCreatureHealth(const Creature* creature);
 		void sendSkills();
 		void sendPing();
@@ -347,6 +348,9 @@ class ProtocolGame final : public Protocol
 		void sendUpdateSupplyTracker(const Item* item);
 		void sendUpdateImpactTracker(int32_t quantity, bool isHeal);
 		void sendUpdateLootTracker(Item* item);
+		
+		// Hotkey equip/dequip item
+		void parseHotkeyEquip(NetworkMessage& msg);
 
 		//Help functions
 
@@ -418,6 +422,11 @@ class ProtocolGame final : public Protocol
 		bool shouldAddExivaRestrictions = false;
 
 		void sendInventory();
+
+		void sendOpenStash();
+		void AddPlayerStowedItems(NetworkMessage& msg);
+		void parseStashWithdraw(NetworkMessage& msg);
+		void sendSpecialContainersAvailable(bool supplyStashAvailable);
 };
 
 #endif

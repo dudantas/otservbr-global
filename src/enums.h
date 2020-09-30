@@ -703,6 +703,7 @@ struct CombatDamage
 	}
 };
 
+using StashItemList = std::map<uint16_t, uint32_t>;
 using MarketOfferList = std::list<MarketOffer>;
 using HistoryMarketOfferList = std::list<HistoryMarketOffer>;
 using ShopInfoList = std::vector<ShopInfo>;
@@ -716,10 +717,24 @@ enum MonstersEvent_t : uint8_t {
 	MONSTERS_EVENT_SAY = 5,
 };
 
-struct BestiaryPoints
-{
-	int32_t kills = 0;
-	bool gained = false;
+enum Supply_Stash_Actions_t : uint8_t {
+	SUPPLY_STASH_ACTION_STOW_ITEM = 0,
+	SUPPLY_STASH_ACTION_STOW_CONTAINER = 1,
+	SUPPLY_STASH_ACTION_STOW_STACK = 2,
+	SUPPLY_STASH_ACTION_WITHDRAW = 3
+};
+
+enum Daily_Reward_Bonus : uint8_t {
+	DAILY_REWARD_FIRST = 2,
+
+	DAILY_REWARD_HP_REGENERATION = 2,
+	DAILY_REWARD_MP_REGENERATION = 3,
+	DAILY_REWARD_STAMINA_REGENERATION = 4,
+	DAILY_REWARD_DOUBLE_HP_REGENERATION = 5,
+	DAILY_REWARD_DOUBLE_MP_REGENERATION = 6,
+	DAILY_REWARD_SOUL_REGENERATION = 7,
+
+	DAILY_REWARD_LAST = 7,
 };
 
 enum Resource_t : uint8_t

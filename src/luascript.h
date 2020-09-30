@@ -944,6 +944,11 @@ class LuaScriptInterface
 		static int luaPlayerGetGroup(lua_State* L);
 		static int luaPlayerSetGroup(lua_State* L);
 
+		static int luaPlayerIsSupplyStashAvailable(lua_State* L);
+		static int luaPlayerGetStashCounter(lua_State* L);
+		static int luaPlayerOpenStash(lua_State* L);
+		static int luaPlayerSetSpecialContainersAvailable(lua_State* L);
+		
 		static int luaPlayerGetStamina(lua_State* L);
 		static int luaPlayerSetStamina(lua_State* L);
 
@@ -1423,6 +1428,11 @@ class LuaScriptInterface
         static int luaMonsterTypeCanWalkOnEnergy(lua_State* L);
         static int luaMonsterTypeCanWalkOnFire(lua_State* L);
         static int luaMonsterTypeCanWalkOnPoison(lua_State* L);
+
+        static int luaMonsterTypeStrategiesTargetNearest(lua_State* L);
+        static int luaMonsterTypeStrategiesTargetHealth(lua_State* L);
+        static int luaMonsterTypeStrategiesTargetDamage(lua_State* L);
+        static int luaMonsterTypeStrategiesTargetRandom(lua_State* L);
 
 		// Loot
 		static int luaCreateLoot(lua_State* L);
