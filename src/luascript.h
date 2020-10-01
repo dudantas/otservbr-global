@@ -749,6 +749,7 @@ class LuaScriptInterface
 		static int luaContainerGetItemCountById(lua_State* L);
 
 		static int luaContainerGetItem(lua_State* L);
+		static int luaContainerGetItems(lua_State* L);
 		static int luaContainerHasItem(lua_State* L);
 		static int luaContainerAddItem(lua_State* L);
 		static int luaContainerAddItemEx(lua_State* L);
