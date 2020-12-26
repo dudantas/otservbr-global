@@ -104,6 +104,22 @@ bool Monster::canWalkOnFieldType(CombatType_t combatType) const
 	}
 }
 
+uint32_t Monster::getReflectValue(CombatType_t reflectType) const {
+	auto it = mType->info.reflectMap.find(reflectType);
+	if (it != mType->info.reflectMap.end()) {
+		return it->second;
+	}
+	return 0;
+}
+
+uint32_t Monster::getHealingCombatValue(CombatType_t healingType) const {
+	auto it = mType->info.healingMap.find(healingType);
+	if (it != mType->info.healingMap.end()) {
+		return it->second;
+	}
+	return 0;
+}
+
 void Monster::onAttackedCreatureDisappear(bool)
 {
 	attackTicks = 0;
@@ -118,7 +134,13 @@ void Monster::onCreatureAppear(Creature* creature, bool isLogin)
 		// onCreatureAppear(self, creature)
 		LuaScriptInterface* scriptInterface = mType->info.scriptInterface;
 		if (!scriptInterface->reserveScriptEnv()) {
-			std::cout << "[Error - Monster::onCreatureAppear] Call stack overflow" << std::endl;
+			std::cout << "[Error - Monster::onCreatureAppear"
+				<< " Monster "
+				<< getName()
+				<< " creature "
+				<< creature->getName()
+				<< "] Call stack overflow. Too many lua script calls being nested."
+				<< std::endl;
 			return;
 		}
 
@@ -160,7 +182,13 @@ void Monster::onRemoveCreature(Creature* creature, bool isLogout)
 		// onCreatureDisappear(self, creature)
 		LuaScriptInterface* scriptInterface = mType->info.scriptInterface;
 		if (!scriptInterface->reserveScriptEnv()) {
-			std::cout << "[Error - Monster::onCreatureDisappear] Call stack overflow" << std::endl;
+			std::cout << "[Error - Monster::onCreatureDisappear"
+				<< " Monster "
+				<< getName()
+				<< " creature "
+				<< creature->getName()
+				<< "] Call stack overflow. Too many lua script calls being nested."
+				<< std::endl;
 			return;
 		}
 
@@ -201,7 +229,13 @@ void Monster::onCreatureMove(Creature* creature, const Tile* newTile, const Posi
 		// onCreatureMove(self, creature, oldPosition, newPosition)
 		LuaScriptInterface* scriptInterface = mType->info.scriptInterface;
 		if (!scriptInterface->reserveScriptEnv()) {
-			std::cout << "[Error - Monster::onCreatureMove] Call stack overflow" << std::endl;
+			std::cout << "[Error - Monster::onCreatureMove"
+				<< " Monster "
+				<< getName()
+				<< " creature "
+				<< creature->getName()
+				<< "] Call stack overflow. Too many lua script calls being nested."
+				<< std::endl;
 			return;
 		}
 
@@ -283,7 +317,13 @@ void Monster::onCreatureSay(Creature* creature, SpeakClasses type, const std::st
 		// onCreatureSay(self, creature, type, message)
 		LuaScriptInterface* scriptInterface = mType->info.scriptInterface;
 		if (!scriptInterface->reserveScriptEnv()) {
-			std::cout << "[Error - Monster::onCreatureSay] Call stack overflow" << std::endl;
+			std::cout << "[Error - Monster::onCreatureSay"
+				<< " Monster "
+				<< getName()
+				<< " creature "
+				<< creature->getName()
+				<< "] Call stack overflow. Too many lua script calls being nested."
+				<< std::endl;
 			return;
 		}
 
@@ -693,10 +733,6 @@ bool Monster::selectTarget(Creature* creature)
 		return false;
 	}
 
-	if (isPassive() && !hasBeenAttacked(creature->getID())) {
-		return false;
-	}
-
 	auto it = std::find(targetList.begin(), targetList.end(), creature);
 	if (it == targetList.end()) {
 		//Target not found in our target list.
@@ -745,6 +781,7 @@ void Monster::updateIdleStatus()
 void Monster::onAddCondition(ConditionType_t type)
 {
 	if (type == CONDITION_FIRE || type == CONDITION_ENERGY || type == CONDITION_POISON) {
+    ignoreFieldDamage = true;
 		updateMapCache();
 	}
 
@@ -769,7 +806,11 @@ void Monster::onThink(uint32_t interval)
 		// onThink(self, interval)
 		LuaScriptInterface* scriptInterface = mType->info.scriptInterface;
 		if (!scriptInterface->reserveScriptEnv()) {
-			std::cout << "[Error - Monster::onThink] Call stack overflow" << std::endl;
+			std::cout << "[Error - Monster::onThink"
+				<< " Monster "
+				<< getName()
+				<< "] Call stack overflow. Too many lua script calls being nested."
+				<< std::endl;
 			return;
 		}
 
@@ -1218,7 +1259,6 @@ bool Monster::getNextStep(Direction& nextDirection, uint32_t& flags)
 			flags |= FLAG_PATHFINDING;
 		} else {
 			if (ignoreFieldDamage) {
-				ignoreFieldDamage = false;
 				updateMapCache();
 			}
 			//target dancing
@@ -1861,8 +1901,9 @@ bool Monster::canWalkTo(Position pos, Direction moveDirection) const
 			return false;
 		}
 
-		Tile* walkTile = g_game.map.getTile(pos);
-		if (walkTile && walkTile->getTopVisibleCreature(this) == nullptr && walkTile->queryAdd(0, *this, 1, FLAG_PATHFINDING) == RETURNVALUE_NOERROR) {
+		Tile* tile = g_game.map.getTile(pos);
+		if (tile && tile->getTopVisibleCreature(this) == nullptr &&
+					tile->queryAdd(0, *this, 1, FLAG_PATHFINDING | FLAG_IGNOREFIELDDAMAGE) == RETURNVALUE_NOERROR) {
 			return true;
 		}
 	}

@@ -25,20 +25,14 @@ jobs:
     - name: Setup reviewdog
       run: |
         mkdir -p $HOME/bin && curl -sfL https://raw.githubusercontent.com/reviewdog/reviewdog/master/install.sh| sh -s -- -b $HOME/bin
-        echo ::add-path::$HOME/bin
-
-    - name: misspell
-      uses: reviewdog/action-misspell@master
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        locale: "US"
-        reporter: github-pr-check
 
     - name: cpplint
       uses: reviewdog/action-cpplint@master
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         reporter: github-pr-check
+        flags: --linelength=120
+        filter: -whitespace/tab
 
     - name: cppcheck
       env:
@@ -46,7 +40,7 @@ jobs:
       run: |
         cd ${{ runner.workspace }}/otservbr-global
         cppcheck --version
-        reviewdog -reporter=github-pr-check -runners=cppcheck
+        $HOME/bin/reviewdog -reporter=github-pr-check -runners=cppcheck
 
     - name: luacheck
       env:
@@ -54,7 +48,7 @@ jobs:
       run: |
         luacheck --version
         cd ${{ runner.workspace }}/otservbr-global
-        reviewdog -reporter=github-pr-check -runners=luacheck
+        $HOME/bin/reviewdog -reporter=github-pr-check -runners=luacheck
 
     - name: luac
       env:
@@ -62,7 +56,7 @@ jobs:
       run: |
         cd ${{ runner.workspace }}/otservbr-global
         luac -v
-        reviewdog -reporter=github-pr-check -runners=luac
+        $HOME/bin/reviewdog -reporter=github-pr-check -runners=luac
 
     - name: xmllint
       env:
@@ -70,4 +64,4 @@ jobs:
       run: |
         cd ${{ runner.workspace }}/otservbr-global
         xmllint --version
-        reviewdog -reporter=github-pr-check -runners=xmllint
+        $HOME/bin/reviewdog -reporter=github-pr-check -runners=xmllint

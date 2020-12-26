@@ -514,6 +514,10 @@ function Player:onItemMoved(item, count, fromPosition, toPosition, fromCylinder,
 end
 
 function Player:onMoveCreature(creature, fromPosition, toPosition)
+	if creature:isPlayer() and creature:getStorageValue(Storage.isTraining) == 1 and self:getGroup():hasFlag(PlayerFlag_CanPushAllCreatures) == false then
+		self:sendCancelMessage(RETURNVALUE_NOTPOSSIBLE)
+	return false
+	end
 	return true
 end
 
@@ -738,10 +742,14 @@ function Player:onGainExperience(source, exp, rawExp)
 	end
 			
 	-- Boosted creature
-	if source:getName():lower() == BoostedCreature.name:lower() then
+	if source:getName():lower() == (Game.getBoostedCreature()):lower() then
 		exp = exp * 2
 	end
 
+	-- Event scheduler
+	if SCHEDULE_EXP_RATE ~= 100 then
+		exp = (exp * SCHEDULE_EXP_RATE)/100
+	end
 	self:setBaseXpGain(displayRate * 100)
 	return exp
 end
@@ -753,6 +761,11 @@ end
 function Player:onGainSkillTries(skill, tries)
 	if APPLY_SKILL_MULTIPLIER == false then
 		return tries
+	end
+
+	-- Event scheduler skill rate
+	if SCHEDULE_SKILL_RATE ~= 100 then
+		tries = (tries * SCHEDULE_SKILL_RATE)/100
 	end
 
 	local skillRate = configManager.getNumber(configKeys.RATE_SKILL)
@@ -817,6 +830,15 @@ function Player:canBeAppliedImbuement(imbuement, item)
 end
 
 function Player:onApplyImbuement(imbuement, item, slot, protectionCharm)
+	for slot = CONST_SLOT_HEAD, CONST_SLOT_AMMO do
+    	local slotItem = self:getSlotItem(slot)
+   		if slotItem and slotItem == item then
+			self:sendImbuementResult(MESSAGEDIALOG_IMBUEMENT_ROLL_FAILED, "You can't imbue a equipped item.")
+			self:closeImbuementWindow()
+            return true
+   		end
+	end
+
 	for _, pid in pairs(imbuement:getItems()) do
 		if self:getItemCount(pid.itemid) < pid.count then
 			self:sendImbuementResult(MESSAGEDIALOG_IMBUEMENT_ROLL_FAILED, "You don't have all necessary items.")

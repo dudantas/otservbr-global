@@ -1842,27 +1842,27 @@ if not Quests then
 				},
 				[86] = {
 					name = "Turmoil of War",
-					storageId = 65049,
+					storageId = Storage.KillingInTheNameOf.BudrikMinos,
 					missionId = 10166,
 					startValue = 0,
 					endValue = 5000,
 					description = function(player)
 						return string.format(
 							"Budrik asked you to kill 5000 minotaurs for him. You already killed %d minotaurs.",
-							(math.max(player:getStorageValue(65049), 0))
+							(math.max(player:getStorageValue(Storage.KillingInTheNameOf.BudrikMinosCount), 0))
 						)
 					end
 				},
 				[87] = {
 					name = "Paw and Fur: Necromancers and Priestess",
-					storageId = 65050,
+					storageId = Storage.KillingInTheNameOf.LugriNecromancers,
 					missionId = 10167,
 					startValue = 0,
 					endValue = 4000,
 					description = function(player)
 						return string.format(
 							"You already hunted %d/4000 necromancers and priestess.",
-							(math.max(player:getStorageValue(65050), 0))
+							(math.max(player:getStorageValue(Storage.KillingInTheNameOf.LugriNecromancerCount), 0))
 						)
 					end
 				}
@@ -5438,7 +5438,33 @@ if not Quests then
 					storageId = Storage.ThreatenedDreams.TroubledMission01,
 					missionId = 10387,
 					startValue = 1,
-					endValue = 4,
+					endValue = 17,
+					states = {
+						[1] = "STATE 1",
+						[2] = "STATE 2",
+						[3] = "STATE 3",
+						[4] = "STATE 4",
+						[5] = "STATE 5",
+						[6] = "STATE 6",
+						[7] = "STATE 7",
+						[8] = "STATE 8",
+						[9] = "STATE 9",
+						[10] = "STATE 10",
+						[11] = "STATE 11",
+						[12] = "STATE 12",
+						[13] = "STATE 13",
+						[14] = "STATE 14",
+						[15] = "STATE 15",
+						[16] = "STATE 16",
+						[17] = "STATE 17",
+					}
+				},
+				[2] = {
+					name = "Mission 02: Tattered Swan Feathers",
+					storageId = Storage.ThreatenedDreams.TroubledMission01,
+					missionId = 10400,
+					startValue = 1,
+					endValue = 5,
 					states = {
 						[1] = "STATE 1",
 						[2] = "STATE 2",
