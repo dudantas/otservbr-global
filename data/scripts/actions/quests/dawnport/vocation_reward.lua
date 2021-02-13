@@ -89,14 +89,14 @@ function vocationReward.onUse(player, item, fromPosition, itemEx, toPosition)
 		)
 		return true
 	end
-	-- Check if enough free slots
+	--[[ Check if enough free slots
 	if player:getFreeBackpackSlots() < 1 then
 		player:sendTextMessage(
 			MESSAGE_EVENT_ADVANCE,
 			"You have found a " .. getItemName(reward.container) .. ". There is no room."
 		)
 		return true
-	end
+	end]]
 	-- Create reward container
 	local container = Game.createItem(reward.container)
 	-- Iterate in inverse order due on addItem/addItemEx by default its added at first index

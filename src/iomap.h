@@ -1,6 +1,6 @@
 /**
  * The Forgotten Server - a free and open-source MMORPG server emulator
- * Copyright (C) 2019  Mark Samman <mark.samman@gmail.com>
+ * Copyright (C) 2021 Mark Samman <mark.samman@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,8 +27,6 @@
 #include "house.h"
 #include "spawn.h"
 #include "configmanager.h"
-
-extern ConfigManager g_config;
 
 enum OTBM_AttrTypes_t {
 	OTBM_ATTR_DESCRIPTION = 1,
@@ -109,7 +107,7 @@ class IOMap
 	static Tile* createTile(Item*& ground, Item* item, uint16_t x, uint16_t y, uint8_t z);
 
 	public:
-		bool loadMap(Map* map, const std::string& identifier);
+		bool loadMap(Map* map, const std::string& fileName);
 
 		/* Load the spawns
 		 * \param map pointer to the Map class
@@ -119,7 +117,7 @@ class IOMap
 			if (map->spawnfile.empty()) {
 				//OTBM file doesn't tell us about the spawnfile,
 				//lets guess it is mapname-spawn.xml.
-				map->spawnfile = g_config.getString(ConfigManager::MAP_NAME);
+				map->spawnfile = g_config().getString(ConfigManager::MAP_NAME);
 				map->spawnfile += "-spawn.xml";
 			}
 
@@ -134,7 +132,7 @@ class IOMap
 			if (map->housefile.empty()) {
 				//OTBM file doesn't tell us about the housefile,
 				//lets guess it is mapname-house.xml.
-				map->housefile = g_config.getString(ConfigManager::MAP_NAME);
+				map->housefile = g_config().getString(ConfigManager::MAP_NAME);
 				map->housefile += "-house.xml";
 			}
 
@@ -153,7 +151,7 @@ class IOMap
 		bool parseMapDataAttributes(OTB::Loader& loader, const OTB::Node& mapNode, Map& map, const std::string& fileName);
 		bool parseWaypoints(OTB::Loader& loader, const OTB::Node& waypointsNode, Map& map);
 		bool parseTowns(OTB::Loader& loader, const OTB::Node& townsNode, Map& map);
-		bool parseTileArea(OTB::Loader& loader, const OTB::Node& tileAreaNode, Map& map);
+		bool parseTileArea(OTB::Loader& loader, const OTB::Node& tileAreaNode, Map& map, bool _legacy);
 		std::string errorString;
 };
 

@@ -1,6 +1,6 @@
 /**
  * The Forgotten Server - a free and open-source MMORPG server emulator
- * Copyright (C) 2019  Mark Samman <mark.samman@gmail.com>
+ * Copyright (C) 2021 Mark Samman <mark.samman@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
 class Town
 {
 	public:
-		explicit Town(uint32_t initId) : id(initId) {}
+		explicit Town(uint32_t id) : id(id) {}
 
 		const Position& getTemplePosition() const {
 			return templePosition;
@@ -37,8 +37,8 @@ class Town
 		void setTemplePos(Position pos) {
 			templePosition = pos;
 		}
-		void setName(std::string newName) {
-			this->name = std::move(newName);
+		void setName(std::string name) {
+			this->name = std::move(name);
 		}
 		uint32_t getID() const {
 			return id;
@@ -50,44 +50,39 @@ class Town
 		Position templePosition;
 };
 
-using TownMap = std::map<uint32_t, Town*>;
+using TownMap = std::map<uint32_t, Town>;
 
 class Towns
 {
 	public:
 		Towns() = default;
-		~Towns() {
-			for (const auto& it : townMap) {
-				delete it.second;
-			}
-		}
 
-		// non-copyable
+		// Singleton - ensures we don't accidentally copy it
 		Towns(const Towns&) = delete;
 		Towns& operator=(const Towns&) = delete;
 
-		bool addTown(uint32_t townId, Town* town) {
-			return townMap.emplace(townId, town).second;
+		Town* addTown(uint32_t townId) {
+			return &townMap.emplace(std::piecewise_construct, std::forward_as_tuple(townId), std::forward_as_tuple(townId)).first->second;
 		}
 
-		Town* getTown(const std::string& townName) const {
-			for (const auto& it : townMap) {
-				if (strcasecmp(townName.c_str(), it.second->getName().c_str()) == 0) {
-					return it.second;
+		Town* getTown(const std::string& townName) {
+			for (auto& it : townMap) {
+				if (strcasecmp(townName.c_str(), it.second.getName().c_str()) == 0) {
+					return &it.second;
 				}
 			}
 			return nullptr;
 		}
 
-		Town* getTown(uint32_t townId) const {
+		Town* getTown(uint32_t townId) {
 			auto it = townMap.find(townId);
 			if (it == townMap.end()) {
 				return nullptr;
 			}
-			return it->second;
+			return &it->second;
 		}
 
-		const TownMap& getTowns() const {
+		TownMap& getTowns() {
 			return townMap;
 		}
 

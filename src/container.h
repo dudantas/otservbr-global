@@ -1,6 +1,6 @@
 /**
  * The Forgotten Server - a free and open-source MMORPG server emulator
- * Copyright (C) 2019  Mark Samman <mark.samman@gmail.com>
+ * Copyright (C) 2021 Mark Samman <mark.samman@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -56,7 +56,7 @@ class Container : public Item, public Cylinder
 		explicit Container(Tile* type);
 		~Container();
 
-		// non-copyable
+		// Singleton - ensures we don't accidentally copy it
 		Container(const Container&) = delete;
 		Container& operator=(const Container&) = delete;
 
@@ -91,7 +91,7 @@ class Container : public Item, public Cylinder
 		}
 
 		Attr_ReadValue readAttr(AttrTypes_t attr, PropStream& propStream) override;
-		bool unserializeItemNode(OTB::Loader& loader, const OTB::Node& node, PropStream& propStream) override;
+		bool unserializeItemNode(OTB::Loader& loader, const OTB::Node& node, PropStream& propStream, bool _legacy) override;
 		std::string getContentDescription() const;
 
 		size_t size() const {

@@ -1,6 +1,6 @@
 /**
  * The Forgotten Server - a free and open-source MMORPG server emulator
- * Copyright (C) 2019  Mark Samman <mark.samman@gmail.com>
+ * Copyright (C) 2021 Mark Samman <mark.samman@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,6 +22,9 @@
 
 static constexpr size_t NETWORKMESSAGE_PLAYERNAME_MAXLENGTH = 30;
 static constexpr int32_t NETWORKMESSAGE_MAXSIZE = 24590;
+//QT clients probably have bigger input buffer because of exiva options
+//but for now we don't support exiva options
+static constexpr int32_t INPUTMESSAGE_MAXSIZE = 2048;
 
 enum MagicEffectClasses : uint8_t {
 	CONST_ME_NONE,
@@ -245,6 +248,8 @@ enum MessageClasses : uint8_t {
 	MESSAGE_LOGIN = 17, /* White message at the bottom of the game window and in the console*/
 	MESSAGE_ADMINISTRADOR = 18, /* Red message in game window and in the console*/
 	MESSAGE_EVENT_ADVANCE = 19, /* White message in game window and in the console*/
+	MESSAGE_STATUS_SMALL, // White message at the bottom of the game window
+	MESSAGE_INFO_DESCR, // Green message in game window and in the console
 	MESSAGE_GAME_HIGHLIGHT = 20, /* Red message in game window and in the console*/
 	MESSAGE_FAILURE = 21, /* White message at the bottom of the game window"*/
 	MESSAGE_LOOK = 22, /* Green message in game window and in the console*/
@@ -581,6 +586,7 @@ enum item_t : uint16_t {
 	ITEM_SMALLSPLASH = 2019,
 
 	ITEM_PARCEL = 2595,
+	ITEM_PARCEL_STAMPED = 2596,
 	ITEM_LETTER = 2597,
 	ITEM_LETTER_STAMPED = 2598,
 	ITEM_LABEL = 2599,
@@ -709,6 +715,8 @@ static constexpr int32_t PSTRG_MOUNTS_CURRENTMOUNT = (PSTRG_MOUNTS_RANGE_START +
 // [3000 - 3500];
 static constexpr int32_t PSTRG_FAMILIARS_RANGE_START = (PSTRG_RESERVED_RANGE_START + 3000);
 static constexpr int32_t PSTRG_FAMILIARS_RANGE_SIZE = 500;
+
+static constexpr int16_t DEFAULT_ATTACK_SPEED = 2000;
 
 #define IS_IN_KEYRANGE(key, range) (key >= PSTRG_##range##_START && ((key - PSTRG_##range##_START) <= PSTRG_##range##_SIZE))
 

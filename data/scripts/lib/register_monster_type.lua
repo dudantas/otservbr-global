@@ -252,7 +252,7 @@ registerMonsterType.loot = function(mtype, mask)
 		for _, loot in pairs(mask.loot) do
 			local parent = Loot()
 			if loot.name then
-				if not parent:setIdFromName(loot.name) then
+				if not parent:setId(loot.name) then
 					lootError = true
 				end
 			else
@@ -264,9 +264,9 @@ registerMonsterType.loot = function(mtype, mask)
 			if loot.subType or loot.charges then
 				parent:setSubType(loot.subType or loot.charges)
 			else
-    			local lType = ItemType(loot.name and loot.name or loot.id)
+				local lType = ItemType(loot.name and loot.name or loot.id)
 				if lType and lType:getCharges() > 1 then
-        			parent:setSubType(lType:getCharges())
+					parent:setSubType(lType:getCharges())
 				end
 			end
 			if loot.chance then
@@ -308,25 +308,20 @@ registerMonsterType.loot = function(mtype, mask)
 			if loot.unique then
 				parent:setUnique(loot.unique)
 			end
-			if loot.child then
-				for _, children in pairs(loot.child) do
+			if loot.child ~= nil then
+				for j = 1, #loot.child do
+					local children = loot.child[j]
 					local child = Loot()
-					if children.name then
-						if not child:setIdFromName(children.name) then
-							lootError = true
-						end
-					else
-						if not isInteger(children.id) or children.id < 1 then
-							lootError = true
-						end
-						child:setId(children.id)
+					if not child:setId(children.id or children.name) then
+						lootError = loot.id
+						break
 					end
 					if children.subType or children.charges then
 						child:setSubType(children.subType or children.charges)
 					else
-    					local cType = ItemType(children.name and children.name or children.id)
+						local cType = ItemType(children.name and children.name or children.id)
 						if cType and cType:getCharges() > 1 then
-        					child:setSubType(cType:getCharges())
+		 					child:setSubType(cType:getCharges())
 						end
 					end
 					if children.chance then

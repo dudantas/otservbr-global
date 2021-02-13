@@ -1,6 +1,6 @@
 /**
  * The Forgotten Server - a free and open-source MMORPG server emulator
- * Copyright (C) 2019  Mark Samman <mark.samman@gmail.com>
+ * Copyright (C) 2021 Mark Samman <mark.samman@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,8 +28,8 @@
 #include "enums.h"
 #include "creatureevent.h"
 
-using ConditionList = std::list<Condition*>;
-using CreatureEventList = std::list<CreatureEvent*>;
+using ConditionList = std::vector<Condition*>;
+using CreatureEventList = std::vector<CreatureEvent*>;
 
 enum slots_t : uint8_t {
 	CONST_SLOT_WHEREEVER = 0,
@@ -103,7 +103,7 @@ class Creature : virtual public Thing
 
 		virtual ~Creature();
 
-		// non-copyable
+		// Singleton - ensures we don't accidentally copy it
 		Creature(const Creature&) = delete;
 		Creature& operator=(const Creature&) = delete;
 
@@ -158,6 +158,7 @@ class Creature : virtual public Thing
 			return skull;
 		}
 		virtual Skulls_t getSkullClient(const Creature* creature) const {
+			if (creature == nullptr) return SKULL_NONE;
 			return creature->getSkull();
 		}
 		void setSkull(Skulls_t newSkull);
@@ -286,7 +287,7 @@ class Creature : virtual public Thing
 		}
 
 		//walk functions
-		void startAutoWalk(const std::forward_list<Direction>& listDir);
+		void startAutoWalk(const std::vector<Direction>& listDir);
 		void addEventWalk(bool firstStep = false);
 		void stopEventWalk();
 		virtual void goToFollowCreature();
@@ -424,7 +425,7 @@ class Creature : virtual public Thing
 
 		virtual void onThink(uint32_t interval);
 		void onAttacking(uint32_t interval);
-		virtual void onCreatureWalk();
+		virtual void onWalk();
 		virtual bool getNextStep(Direction& dir, uint32_t& flags);
 
 		void onAddTileItem(const Tile* tile, const Position& pos);
@@ -470,6 +471,7 @@ class Creature : virtual public Thing
 			return tile;
 		}
 		void setParent(Cylinder* cylinder) override final {
+			if (cylinder == nullptr) return;
 			tile = static_cast<Tile*>(cylinder);
 			position = tile->getPosition();
 		}
@@ -498,8 +500,8 @@ class Creature : virtual public Thing
 
 		double getDamageRatio(Creature* attacker) const;
 
-		bool getPathTo(const Position& targetPos, std::forward_list<Direction>& dirList, const FindPathParams& fpp) const;
-		bool getPathTo(const Position& targetPos, std::forward_list<Direction>& dirList, int32_t minTargetDist, int32_t maxTargetDist, bool fullPathSearch = true, bool clearSight = true, int32_t maxSearchDist = 0) const;
+		bool getPathTo(const Position& targetPos, std::vector<Direction>& dirList, const FindPathParams& fpp) const;
+		bool getPathTo(const Position& targetPos, std::vector<Direction>& dirList, int32_t minTargetDist, int32_t maxTargetDist, bool fullPathSearch = true, bool clearSight = true, int32_t maxSearchDist = 0) const;
 
 		void incrementReferenceCounter() {
 			++referenceCounter;
@@ -534,7 +536,7 @@ class Creature : virtual public Thing
 		CreatureEventList eventsList;
 		ConditionList conditions;
 
-		std::forward_list<Direction> listWalkDir;
+		std::vector<Direction> listWalkDir;
 
 		Tile* tile = nullptr;
 		Creature* attackedCreature = nullptr;
@@ -555,7 +557,7 @@ class Creature : virtual public Thing
 		uint32_t referenceCounter = 0;
 		uint32_t id = 0;
 		uint32_t scriptEventsBitField = 0;
-		uint32_t eventWalk = 0;
+		uint64_t eventWalk = 0;
 		uint32_t walkUpdateTicks = 0;
 		int32_t returnToMasterInterval = 0;
 		uint32_t lastHitCreatureId = 0;

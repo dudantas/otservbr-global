@@ -1,6 +1,15 @@
 local increasing = {[416] = 417, [426] = 425, [446] = 447, [3216] = 3217, [3202] = 3215, [11062] = 11063}
 local decreasing = {[417] = 416, [425] = 426, [447] = 446, [3217] = 3216, [3215] = 3202, [11063] = 11062}
 
+local itemAdjusting = nil
+if GAME_FEATURE_STASH then
+	itemAdjusting = 4
+elseif GAME_FEATURE_MARKET then
+	itemAdjusting = 3
+else
+	itemAdjusting = 1
+end
+
 -- onStepIn
 local tiles = MoveEvent()
 
@@ -25,20 +34,16 @@ function tiles.onStepIn(creature, item, position, fromPosition)
 		return true
 	end
 
-	if position:getTile():hasFlag(TILESTATE_PROTECTIONZONE) then
+	if Tile(position):hasFlag(TILESTATE_PROTECTIONZONE) then
 		local lookPosition = player:getPosition()
 		lookPosition:getNextPosition(player:getDirection())
-		local depotItem = lookPosition:getTile():getItemByType(ITEM_TYPE_DEPOT)
-
-		if depotItem ~= nil then
-			local depotItems = 0
-			for id = 1, configManager.getNumber("depotBoxes") do
-				depotItems = depotItems + player:getDepotChest(id, true):getItemHoldingCount()
+		local depotItem = Tile(lookPosition):getItemByType(ITEM_TYPE_DEPOT)
+		if depotItem then
+			local depotItems = player:getDepotLocker(getDepotId(depotItem:getUniqueId()), true):getItemHoldingCount() - itemAdjusting
+			player:sendTextMessage(MESSAGE_STATUS_DEFAULT, "Your depot contains " .. depotItems .. " item" .. (depotItems > 1 and "s." or "."))
+			if GAME_FEATURE_STASH then
+				player:setSpecialContainersAvailable(true, true)
 			end
-
-			player:sendTextMessage(MESSAGE_FAILURE, "Your depot contains " .. depotItems .. " item" .. (depotItems > 1 and "s." or ".") .. "\
-			Your supply stash contains " .. player:getStashCount() .. " item" .. (player:getStashCount()	 > 1 and "s." or "."))
-			player:setSpecialContainersAvailable(true)
 			return true
 		end
 	end
@@ -71,8 +76,11 @@ function tiles.onStepOut(creature, item, position, fromPosition)
 		return true
 	end
 
+	if GAME_FEATURE_STASH and player:isPlayer() and (player:isSupplyStashAvailable() or player:isMarketAvailable()) then
+		player:setSpecialContainersAvailable(false, false)
+	end
+
 	item:transform(decreasing[item.itemid])
-	player:setSpecialContainersAvailable(false)
 	return true
 end
 

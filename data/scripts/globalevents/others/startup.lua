@@ -1,4 +1,5 @@
 local serverstartup = GlobalEvent("serverstartup")
+
 function serverstartup.onStartup()
 	print(">> Loading map attributes")
 	-- Npc table
@@ -57,13 +58,6 @@ function serverstartup.onStartup()
 
 	-- reset Daily Reward status
 	db.query('UPDATE `players` SET `isreward` = '..DAILY_REWARD_NOTCOLLECTED)
-
-	-- reset storages and allow purchase of boost in the store
-	db.query('UPDATE `player_storage` SET `value` = 0 WHERE `player_storage`.`key` = 51052')
-
-	-- reset familiars message storage
-	db.query('DELETE FROM `player_storage` WHERE `key` = '..Storage.PetSummonEvent10)
-	db.query('DELETE FROM `player_storage` WHERE `key` = '..Storage.PetSummonEvent60)
 
 	-- delete canceled and rejected guilds
 	db.asyncQuery('DELETE FROM `guild_wars` WHERE `status` = 2')
@@ -131,4 +125,5 @@ function serverstartup.onStartup()
 	-- Load otservbr-custom map (data/world/custom/otservbr-custom.otbm)
 	loadCustomMap()
 end
+
 serverstartup:register()

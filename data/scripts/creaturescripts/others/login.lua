@@ -138,6 +138,12 @@ function playerLogin.onLogin(player)
 
 	player:loadSpecialStorage()
 
+	-- Reset storages and allow purchase of boost in the store
+	player:setStorageValue(51052, -1)
+	-- Reset familiars message storage
+	player:setStorageValue(Storage.PetSummonEvent10, -1)
+	player:setStorageValue(Storage.PetSummonEvent60, -1)
+
 	if player:getGroup():getId() >= GROUP_TYPE_GAMEMASTER then
 		player:setGhostMode(true)
 	end
